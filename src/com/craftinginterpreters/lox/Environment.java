@@ -11,7 +11,7 @@ public class Environment {
      *       whereas the lexeme String is the name of the identifier
      *       each of these hypothetical Tokens refer to.
      *       Programmatically speaking, using a raw string ensures
-     *       that all tokens refer to the same map key.
+     *       that all tokens refer to the same HashMap key.
     */
     
     Environment() {

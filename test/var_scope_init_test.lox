@@ -5,14 +5,14 @@ var global = "global";
 print global;  // Should work fine
 
 {
-  var a; // Declared but uninitialized
+ // var a; // ERROR - Declared but uninitialized
   var b = "initialized";
   print b;  // Should work fine
   
   // This should throw an error
-  print a;
+  // print a; // ERROR
   
+  var a = "now initialized";  
   // Code below shouldn't execute
-  a = "now initialized";  
   print a;  // Would work if we reached here
 }

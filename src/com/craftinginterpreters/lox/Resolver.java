@@ -288,7 +288,10 @@ public class Resolver implements Expr.ExprVisitor<Void>, Stmt.StmtVisitor<Void> 
             declare(param, ObjectType.FUNCTION);
             define(param);
         }
-        resolve(expr.body);
+        Stmt.Block funcBody = (Stmt.Block)expr.body;
+        for (Stmt stmt : funcBody.statements) {
+            resolve(stmt);
+        }
         endScope();
 
         return null;
@@ -301,10 +304,13 @@ public class Resolver implements Expr.ExprVisitor<Void>, Stmt.StmtVisitor<Void> 
         currentFunction = type;
         beginScope();
         for (Token param : funcDef.params) {
-            declare(param, ObjectType.FUNCTION);
+            declare(param, ObjectType.VARIABLE);
             define(param);
         }
-        resolve(funcDef.body);
+        Stmt.Block funcBody = (Stmt.Block)funcDef.body;
+        for (Stmt stmt : funcBody.statements) {
+            resolve(stmt);
+        }
         endScope();
         currentFunction = enclosingFunction;
     }
@@ -312,7 +318,7 @@ public class Resolver implements Expr.ExprVisitor<Void>, Stmt.StmtVisitor<Void> 
     private void resolveFunctionDecl(Stmt.FunctionDecl funcDecl) {
         beginScope();
         for (Token param : funcDecl.params) {
-            declare(param, ObjectType.FUNCTION);
+            declare(param, ObjectType.VARIABLE);
             define(param);
         }
         endScope();
@@ -365,7 +371,7 @@ public class Resolver implements Expr.ExprVisitor<Void>, Stmt.StmtVisitor<Void> 
         for (String key : scopes.peek().keySet()) {
             if (scopes.peek().get(key).isUsed == false &&
                 scopes.peek().get(key).objectType == ObjectType.VARIABLE) {
-                Lox.error(scopes.peek().get(key).name, "Unused variable.");
+                Lox.warning(scopes.peek().get(key).name, "Unused variable.");
             }
         }
         scopes.pop();

@@ -9,6 +9,11 @@ import java.nio.file.Paths;
 import java.util.List;
 
 public class Lox {
+    private static enum LOG_LEVEL {
+        DEBUG,
+        WARNING,
+        ERROR
+    }
     static boolean hadError = false;
     // static boolean hadRunFileError = false;
     // static boolean runningFile = false;
@@ -131,20 +136,29 @@ public class Lox {
     }
 
     static void error(int line, String msg) {
-        report(line, "", msg);
+        report(line, "", msg, LOG_LEVEL.ERROR);
     }
 
-    private static void report(int line, String where, String msg) {
+    private static void report(int line, String where, String msg, LOG_LEVEL level) {
+        String levelString = level == LOG_LEVEL.WARNING ? " Warning" : level == LOG_LEVEL.ERROR ? " Error" : " Debug error";
         System.err.println(
-            "[line " + line + "]" + " Error " + where + ": " + msg);
-        hadError = true;
+            "[line " + line + "]" + levelString + where + ": " + msg);
+        if (level == LOG_LEVEL.ERROR) hadError = true;
     }
 
     static void error(Token token, String message) {
         if (token.type == TokenType.EOF) {
-            report(token.line, "at end", message);
+            report(token.line, "at end", message, LOG_LEVEL.ERROR);
         } else {
-            report(token.line, " at '" + token.lexeme + "'", message);
+            report(token.line, " at '" + token.lexeme + "'", message, LOG_LEVEL.ERROR);
+        }
+    }
+
+    static void warning(Token token, String message) {
+        if (token.type == TokenType.EOF) {
+            report(token.line, "at end", message, LOG_LEVEL.WARNING);
+        } else {
+            report(token.line, " at '" + token.lexeme + "'", message, LOG_LEVEL.WARNING);
         }
     }
 

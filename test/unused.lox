@@ -1,5 +1,5 @@
 fun func() {
-    var unused = 42;
+    // var unused = 42; // ERROR - unused var
     return 3;
 }
 
