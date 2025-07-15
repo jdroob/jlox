@@ -1,0 +1,37 @@
+
+/*
+    How C handles param / local var name conflicts:
+
+        $ cc scopeTesting.c -Wall -o scopeTesting
+        scopeTesting.c: In function ‘func’:
+        scopeTesting.c:5:13: error: ‘a’ redeclared as different kind of symbol
+            5 |         int a = 99;
+            |             ^
+        scopeTesting.c:4:15: note: previous definition of ‘a’ with type ‘int’
+            4 | void func(int a) {
+            |           ~~~~^
+        $ cat scopeTesting.c
+        #include <stdlib.h>
+        #include <stdio.h>
+
+        void func(int a) {
+                int a = 99;
+                printf("a: %d\n", a);
+        }
+
+        int main(void) {
+                func(42);
+                return 0;
+        }
+*/
+
+fun func(a) {
+    var a = 99;
+    print a;
+}
+
+fun main() {
+    func(42);
+}
+
+main();

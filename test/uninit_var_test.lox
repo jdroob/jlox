@@ -1,0 +1,10 @@
+// Test for uninitialized variable access errors
+print "Starting uninitialized variable test...";
+
+// Case 1: Variable declared without initializer and used
+var a;
+print "Should fail before reaching here";
+print a; // Should throw runtime error
+
+// The following code should never run
+print "Should not print this";

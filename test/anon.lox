@@ -1,0 +1,17 @@
+/** Test Anonymous function usage in Lox */
+
+fun thrice(fn) {
+    for (var i=0; i<=3; ++i) {
+        fn(i);
+    }
+}
+
+fun main() {
+    thrice(
+        fun (a) {
+            print a;
+        }
+    );
+}
+
+main();

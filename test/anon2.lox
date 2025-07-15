@@ -1,0 +1,8 @@
+/** Test Anonymous function usage in Lox part 2 */
+
+fun main() {
+    print fun () {};
+    print fun (a) {};
+}
+
+main();

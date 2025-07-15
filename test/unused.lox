@@ -1,0 +1,14 @@
+fun func() {
+    var unused = 42;
+    return 3;
+}
+
+fun main() {
+    var scope = "inner";
+    fun inner() {
+        print scope;
+    }
+    print "hi";
+}
+
+main();

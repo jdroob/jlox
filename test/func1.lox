@@ -1,0 +1,22 @@
+fun add2(x, y) {
+    return x + y;
+}
+
+fun assign1(x) {
+    x = 1;
+}
+
+fun main() {
+    var x = 0;
+    print("Value of x before call: " + x);
+    assign1(x);
+    print("Value of x after call: " + x);
+    print("Yep! pass by value only rn...");
+
+    x = 24;
+    print("x = " + x + " ; add2(x, 2*x) = " + add2(x, 2*x));
+    
+    return 0;
+}
+
+var ret = main();

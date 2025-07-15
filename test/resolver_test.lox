@@ -1,0 +1,15 @@
+/**
+* failing case: a changes across calls
+*/
+
+var a = "global";
+
+{
+    fun printA() {
+        print a;
+    }
+
+    printA();   // "global"
+    var a = "block";
+    printA();   // "global" (should still be "global"...)
+}
