@@ -14,8 +14,8 @@ abstract class Stmt {
 		R visitBreakStmt(Stmt.Break breakStmt);
 		R visitContinueStmt(Stmt.Continue continueStmt);
 		R visitFunctionDefStmt(Stmt.FunctionDef functiondef);
-		R visitFunctionDeclStmt(Stmt.FunctionDecl functiondecl);
 		R visitReturnStmt(Stmt.Return returnStmt);
+		R visitClassStmt(Stmt.Class classStmt);
 	}
 	abstract <R> R accept(StmtVisitor<R> visitor);
 	static class Expression extends Stmt {
@@ -156,20 +156,6 @@ abstract class Stmt {
 		final List<Token> params;
 		final Stmt body;
 	}
-	static class FunctionDecl extends Stmt {
-		FunctionDecl(Token name, List<Token> params) {
-			this.name = name;
-			this.params = params;
-		}
-
-		@Override
-		public <R> R accept(StmtVisitor<R> visitor) {
-			return visitor.visitFunctionDeclStmt(this);
-		}
-
-		final Token name;
-		final List<Token> params;
-	}
 	static class Return extends Stmt {
 		Return(Token keyword, Expr value) {
 			this.keyword = keyword;
@@ -183,5 +169,19 @@ abstract class Stmt {
 
 		final Token keyword;
 		final Expr value;
+	}
+	static class Class extends Stmt {
+		Class(Token name, List<Stmt.FunctionDef> methods) {
+			this.name = name;
+			this.methods = methods;
+		}
+
+		@Override
+		public <R> R accept(StmtVisitor<R> visitor) {
+			return visitor.visitClassStmt(this);
+		}
+
+		final Token name;
+		final List<Stmt.FunctionDef> methods;
 	}
 }

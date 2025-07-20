@@ -7,7 +7,7 @@ import java.util.Map;
 import java.util.Stack;
 
 public class Resolver implements Expr.ExprVisitor<Void>, Stmt.StmtVisitor<Void> {
-    private enum FunctionType {
+    private enum EnclosingFunction {
         NONE,
         FUNCTION
     }
@@ -18,7 +18,8 @@ public class Resolver implements Expr.ExprVisitor<Void>, Stmt.StmtVisitor<Void> 
     private enum ObjectType {
         UNINITIALIZED,
         VARIABLE,
-        FUNCTION
+        FUNCTION,
+        CLASS
     }
     private class ResolverInfo {
         public Boolean isDefined;
@@ -46,7 +47,7 @@ public class Resolver implements Expr.ExprVisitor<Void>, Stmt.StmtVisitor<Void> 
     private final Interpreter interpreter;
     private final Stack<Map<String, ResolverInfo>> scopes;
     private final Map<String, ResolverInfo> globals;
-    FunctionType currentFunction = FunctionType.NONE;
+    EnclosingFunction currentFunction = EnclosingFunction.NONE;
     LoopStatus loopStatus = LoopStatus.NONE;
 
     Resolver(Interpreter interpreter) {
@@ -112,16 +113,7 @@ public class Resolver implements Expr.ExprVisitor<Void>, Stmt.StmtVisitor<Void> 
     public Void visitFunctionDefStmt(Stmt.FunctionDef funcDef) {
         declare(funcDef.name, ObjectType.FUNCTION);
         define(funcDef.name);
-        resolveFunctionDef(funcDef, FunctionType.FUNCTION);
-
-        return null;
-    }
-
-    @Override
-    public Void visitFunctionDeclStmt(Stmt.FunctionDecl funcDecl) {
-        declare(funcDecl.name, ObjectType.FUNCTION);
-        // define(funcDecl.name);
-        resolveFunctionDecl(funcDecl);
+        resolveFunctionDef(funcDef, EnclosingFunction.FUNCTION);
 
         return null;
     }
@@ -154,7 +146,7 @@ public class Resolver implements Expr.ExprVisitor<Void>, Stmt.StmtVisitor<Void> 
 
     @Override
     public Void visitReturnStmt(Stmt.Return stmt) {
-        if (currentFunction == FunctionType.NONE) {
+        if (currentFunction == EnclosingFunction.NONE) {
             Lox.error(stmt.keyword,
                         "Cannot return from top-level code.");
         }
@@ -238,6 +230,17 @@ public class Resolver implements Expr.ExprVisitor<Void>, Stmt.StmtVisitor<Void> 
     }
 
     @Override
+    public Void visitClassStmt(Stmt.Class classDecl) {
+        declare(classDecl.name, ObjectType.CLASS);
+        define(classDecl.name);
+        // for (Stmt.FunctionDef funcDef : classDecl.methods) {
+        //     resolveFunctionDef(funcDef, EnclosingFunction.NONE);
+        // }
+
+        return null;
+    }
+
+    @Override
     public Void visitUnaryExpr(Expr.Unary expr) {
         resolve(expr.right);
 
@@ -297,10 +300,27 @@ public class Resolver implements Expr.ExprVisitor<Void>, Stmt.StmtVisitor<Void> 
         return null;
     }
 
+    @Override
+    public Void visitGetExpr(Expr.Get getExpr) {
+        resolve(getExpr.object);
+        // Property access is dynamic, therefore no need to resolve getExpr.name
+
+        return null;
+    }
+
+    @Override
+    public Void visitSetExpr(Expr.Set setExpr) {
+        resolve(setExpr.object);
+        resolve(setExpr.rhs);
+        // Property access is dynamic, therefore no need to resolve setExpr.name
+
+        return null;
+    }
+
     /** Helper methods */
 
-    private void resolveFunctionDef(Stmt.FunctionDef funcDef, FunctionType type) {
-        FunctionType enclosingFunction = currentFunction;
+    private void resolveFunctionDef(Stmt.FunctionDef funcDef, EnclosingFunction type) {
+        EnclosingFunction enclosingFunction = currentFunction;
         currentFunction = type;
         beginScope();
         for (Token param : funcDef.params) {
@@ -313,15 +333,6 @@ public class Resolver implements Expr.ExprVisitor<Void>, Stmt.StmtVisitor<Void> 
         }
         endScope();
         currentFunction = enclosingFunction;
-    }
-
-    private void resolveFunctionDecl(Stmt.FunctionDecl funcDecl) {
-        beginScope();
-        for (Token param : funcDecl.params) {
-            declare(param, ObjectType.VARIABLE);
-            define(param);
-        }
-        endScope();
     }
 
     private void resolveLocal(Expr expr, Token name) {

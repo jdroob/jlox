@@ -388,14 +388,6 @@ public class Interpreter implements Expr.ExprVisitor<Object>, Stmt.StmtVisitor<V
     }
 
     @Override
-    public Void visitFunctionDeclStmt(Stmt.FunctionDecl funcDecl) {
-
-        env.define(funcDecl.name.lexeme, null);
-
-        return null;
-    }
-
-    @Override
     public Void visitReturnStmt(Stmt.Return retStmt) {
         Object retValue = null;
         if (retStmt.value != null) retValue = evaluate(retStmt.value);
@@ -627,6 +619,14 @@ public class Interpreter implements Expr.ExprVisitor<Object>, Stmt.StmtVisitor<V
     }
 
     @Override
+    public Void visitClassStmt(Stmt.Class classStmt) {
+        env.define(classStmt.name.lexeme, null);
+        LoxClass klass = new LoxClass(classStmt.name.lexeme, classStmt.methods, this.env);
+        env.update(classStmt.name, klass);
+        return null;
+    }
+
+    @Override
     public Object visitIndexExpr(Expr.Index idx) {
         Object object = evaluate(idx.object);
         Object idxExpr = evaluate(idx.idxExpr);
@@ -679,6 +679,30 @@ public class Interpreter implements Expr.ExprVisitor<Object>, Stmt.StmtVisitor<V
     @Override
     public Object visitAnonymousExpr(Expr.Anonymous anon) {
         return new LoxFunction(anon.params, anon.body, this.env);
+    }
+
+    @Override
+    public Object visitGetExpr(Expr.Get getExpr) {
+        Object object = evaluate(getExpr.object);
+        if (object instanceof LoxInstance) {
+            return ((LoxInstance)object).get(getExpr.name);
+        }
+        
+        throw new RuntimeError(getExpr.name,
+            "Only instances have properties.");
+    }
+
+    @Override
+    public Object visitSetExpr(Expr.Set setExpr) {
+        Object object = evaluate(setExpr.object);
+        if (object instanceof LoxInstance) {
+            Object rhsVal = evaluate(setExpr.rhs);
+            ((LoxInstance)object).set(setExpr.name, rhsVal);
+            return rhsVal;
+        }
+        
+        throw new RuntimeError(setExpr.name,
+            "Only instances have properties.");
     }
 
     //==================

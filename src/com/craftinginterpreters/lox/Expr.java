@@ -16,6 +16,8 @@ abstract class Expr {
 		R visitPostfixExpr(Expr.Postfix postfix);
 		R visitCallExpr(Expr.Call call);
 		R visitAnonymousExpr(Expr.Anonymous anonymous);
+		R visitGetExpr(Expr.Get get);
+		R visitSetExpr(Expr.Set set);
 	}
 	abstract <R> R accept(ExprVisitor<R> visitor);
 	static class Binary extends Expr {
@@ -191,5 +193,35 @@ abstract class Expr {
 
 		final List<Token> params;
 		final Stmt body;
+	}
+	static class Get extends Expr {
+		Get(Expr object, Token name) {
+			this.object = object;
+			this.name = name;
+		}
+
+		@Override
+		public <R> R accept(ExprVisitor<R> visitor) {
+			return visitor.visitGetExpr(this);
+		}
+
+		final Expr object;
+		final Token name;
+	}
+	static class Set extends Expr {
+		Set(Expr object, Token name, Expr rhs) {
+			this.object = object;
+			this.name = name;
+			this.rhs = rhs;
+		}
+
+		@Override
+		public <R> R accept(ExprVisitor<R> visitor) {
+			return visitor.visitSetExpr(this);
+		}
+
+		final Expr object;
+		final Token name;
+		final Expr rhs;
 	}
 }

@@ -67,6 +67,16 @@ public class TreePrinter implements Expr.ExprVisitor<String> {
         return format("anon", anon);
     }
 
+    @Override
+    public String visitGetExpr(Expr.Get getExpr) {
+        return format(getExpr.name.lexeme, getExpr.object);
+    }
+
+    @Override
+    public String visitSetExpr(Expr.Set setExpr) {
+        return format(setExpr.name.lexeme, setExpr.object, setExpr.rhs);
+    }
+
     private String format(String name, Expr... exprs) {
         StringBuilder builder = new StringBuilder();
         builder.append(name).append("\n");

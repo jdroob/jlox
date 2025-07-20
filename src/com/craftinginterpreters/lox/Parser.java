@@ -11,10 +11,9 @@ import static com.craftinginterpreters.lox.TokenType.*;
  * LOX GRAMMAR RULES:
  * ------------------
  * program      -> declaration* EOF ;
- * declaration  -> funDef | varDecl | funDecl | statement ;
+ * declaration  -> funDef | varDecl | classDecl | statement ;
+ * classDecl    -> "class" IDENTIFIER "{" function* "}" ;
  * funDef       -> "fun" function ;
- * funDecl      -> "fun" funStub ;
- * funStub      -> IDENTIFIER "(" parameters? ")" ";"
  * function     -> IDENTIFIER "(" parameters? ")" blockStmt ;
  * parameters   -> IDENTIFIER ( "," IDENTIFIER )* ;
  * varDecl      -> "var" IDENTIFIER ( "=" expression )? ";" ;
@@ -33,7 +32,7 @@ import static com.craftinginterpreters.lox.TokenType.*;
  *
  * expression   -> comma ;
  * comma        -> assign ("," assign)* ;
- * assign       -> IDENTIFIER "=" assign | ternary ;
+ * assign       -> (call ".")? IDENTIFIER "=" assign | ternary ;
  * ternary      -> logical_or ("?" ternary ":" ternary)? ;
  * logical_or   -> equality ("or" equality)* ;
  * logical_and  -> equality ("and" equality)* ;
@@ -47,8 +46,8 @@ import static com.craftinginterpreters.lox.TokenType.*;
  * exp          -> prefix ( "**" prefix )* ;
  * prefix       -> ("++" | "--") IDENTIFIER | index ;
  * index        -> postfix ("[" expression (":" expression)? "]")* ;
- * postfix      -> IDENTIFIER ("++" | "--") | primary ;
- * call         -> primary ( "(" arguments? ")" )* ;
+ * postfix      -> IDENTIFIER ("++" | "--") | call ;
+ * call         -> primary ( "(" arguments? ")" | IDENTIFIER "." )* ;
  * arguments    -> expression ( "," expression )* ;
  * primary      -> NUMBER | STRING | "true" | "false" | "nil" | "(" expression ")" | IDENTIFIER | 
  *                 anonymous | error ;
@@ -93,13 +92,15 @@ public class Parser {
     // Statements
     //=========================
     private Stmt declaration() {
-        // declaration  -> funDef | varDecl | funDecl | statement ;
+        // declaration  -> funDef | varDecl | classDecl | statement ;
         try {
-            if (match(VAR)) 
+            if (match(VAR)) {
                 return varDeclaration();
-            else if (peek().type == FUN && peekNext().type == IDENTIFIER) {
+            } else if (peek().type == FUN && peekNext().type == IDENTIFIER) {
                 match(FUN);
-                return funDefinition("function");   
+                return functionDef("function");   
+            } else if (match(CLASS)) {
+                return classDecl();
             }
             return statement();
         } catch (ParseError error) {
@@ -122,11 +123,24 @@ public class Parser {
         return new Stmt.Var(name, initializer);
     }
 
-    private Stmt funDefinition(String kind) {
+    private Stmt classDecl() {
+        // classDecl -> "class" IDENTIFIER "{" function* "}" ;
+        Token name = consume(IDENTIFIER, "Expect a class name.");
+        consume(LEFT_BRACE, "Expected a '{'.");
+
+        List<Stmt.FunctionDef> methods = new ArrayList<>();
+        while (!check(RIGHT_BRACE) && !isAtEnd()) {
+            // function -> IDENTIFIER "(" parameters? ")" blockStmt ;
+            methods.add((Stmt.FunctionDef)functionDef("method"));
+        }
+
+        consume(RIGHT_BRACE, "Expected a '}'");
+        return new Stmt.Class(name, methods);
+    }
+
+    private Stmt functionDef(String kind) {
         // funDef   -> "fun" function ;
-        // funDecl  -> "fun" funStub ;
         // function ->  IDENTIFIER "(" parameters? ")" blockStmt ;
-        // funStub  ->  IDENTIFIER "(" parameters? ")" ";"
         Token name = consume(IDENTIFIER, "Expect a " + kind + " name.");
         consume(LEFT_PAREN, "Expected a '(' after " + kind + " name.");
         List<Token> params = new ArrayList<>();
@@ -139,11 +153,6 @@ public class Parser {
             } while (match(COMMA));
         }
         consume(RIGHT_PAREN, "Expected a ')'.");
-        
-        if (match(SEMICOLON)) {
-            return new Stmt.FunctionDecl(name, params);
-        }
-        
         consume(LEFT_BRACE, "Expected a '{'.");
         
         Stmt body = blockStmt();
@@ -194,7 +203,6 @@ public class Parser {
         if (match(ELSE)) {
             // consume(LEFT_BRACE, "expected a '{'");
             elseStmt = statement();
-            // return new Stmt.IfElse(condition, thenBlock, elseBlock);
         }
 
         return new Stmt.If(condition, thenStmt, elseStmt);
@@ -367,6 +375,9 @@ public class Parser {
             if (expr instanceof Expr.Variable) {
                 Token name = ((Expr.Variable)expr).name;
                 return new Expr.Assign(name, rhs);
+            } else if (expr instanceof Expr.Get) {
+                Expr.Get get = (Expr.Get)expr;
+                return new Expr.Set(get.object, get.name, rhs);
             }
 
             error(equals, "Invalid assignment target.");
@@ -561,11 +572,14 @@ public class Parser {
     }
 
     private Expr call() {
-        // call -> primary ( "(" arguments? ")" )* ;
+        // call -> primary ( "(" arguments? ")" | "." IDENTIFIER )* ;
         Expr expr = primary();
         while (true) {
             if (match(LEFT_PAREN)) {
                 expr = finishCall(expr);
+            } else if (match(DOT)) {
+                Token identifier = consume(IDENTIFIER, "Expected an identifier.");
+                expr = new Expr.Get(expr, identifier);
             } else {
                 break;
             }

@@ -66,6 +66,16 @@ public class RpnPrinter implements Expr.ExprVisitor<String> {
         return reversePolishify("anon", anon);
     }
 
+    @Override
+    public String visitGetExpr(Expr.Get getExpr) {
+        return reversePolishify(getExpr.name.lexeme, getExpr.object);
+    }
+
+    @Override
+    public String visitSetExpr(Expr.Set setExpr) {
+        return reversePolishify(setExpr.name.lexeme, setExpr.object, setExpr.rhs);
+    }
+
     private String reversePolishify(String name, Expr... exprs) {
         StringBuilder builder = new StringBuilder();
         for (Expr expr : exprs) {

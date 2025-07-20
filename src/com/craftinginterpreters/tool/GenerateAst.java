@@ -24,7 +24,9 @@ public class GenerateAst {
             "Prefix : Token operator, Token name",
             "Postfix : Token name, Token operator",
             "Call : Expr callee, Token paren, List<Expr> args",
-            "Anonymous : List<Token> params, Stmt body"
+            "Anonymous : List<Token> params, Stmt body",
+            "Get : Expr object, Token name",
+            "Set : Expr object, Token name, Expr rhs"
         ));
         defineAst(outputDir, "Stmt", Arrays.asList(
             "Expression : Expr expression",
@@ -37,8 +39,8 @@ public class GenerateAst {
             "Break : Token keyword",
             "Continue : Token keyword",
             "FunctionDef : Token name, List<Token> params, Stmt body",
-            "FunctionDecl : Token name, List<Token> params",
-            "Return   : Token keyword, Expr value"
+            "Return : Token keyword, Expr value",
+            "Class : Token name, List<Stmt.FunctionDef> methods"
         ));
     }
 
@@ -110,7 +112,8 @@ public class GenerateAst {
                 typeName.toLowerCase().equals("break") ||
                 typeName.toLowerCase().equals("continue") ||
                 typeName.toLowerCase().equals("return") ||
-                typeName.toLowerCase().equals("for")) {
+                typeName.toLowerCase().equals("for") ||
+                typeName.toLowerCase().equals("class")) {
                 hack = typeName.toLowerCase() + "Stmt";
             } else {
                 hack = typeName.toLowerCase();

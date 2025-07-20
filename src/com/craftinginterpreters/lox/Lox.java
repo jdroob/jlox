@@ -148,7 +148,7 @@ public class Lox {
 
     static void error(Token token, String message) {
         if (token.type == TokenType.EOF) {
-            report(token.line, "at end", message, LOG_LEVEL.ERROR);
+            report(token.line, " at end", message, LOG_LEVEL.ERROR);
         } else {
             report(token.line, " at '" + token.lexeme + "'", message, LOG_LEVEL.ERROR);
         }
