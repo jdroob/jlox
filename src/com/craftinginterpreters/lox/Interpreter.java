@@ -621,7 +621,12 @@ public class Interpreter implements Expr.ExprVisitor<Object>, Stmt.StmtVisitor<V
     @Override
     public Void visitClassStmt(Stmt.Class classStmt) {
         env.define(classStmt.name.lexeme, null);
-        LoxClass klass = new LoxClass(classStmt.name.lexeme, classStmt.methods, this.env);
+        Map<String, LoxFunction> methods = new HashMap<>();
+        for (Stmt.FunctionDef method : classStmt.methods) {
+            LoxFunction function = new LoxFunction(method, this.env);
+            methods.put(method.name.lexeme, function);
+        }
+        LoxClass klass = new LoxClass(classStmt.name.lexeme, methods, this.env);
         env.update(classStmt.name, klass);
         return null;
     }
@@ -666,14 +671,15 @@ public class Interpreter implements Expr.ExprVisitor<Object>, Stmt.StmtVisitor<V
                 "Can only call functions or classes."
             );
         }
-        LoxCallable function = (LoxCallable)callee;
-        if (args.size() != function.arity()) {
+
+        LoxCallable callable = (LoxCallable)callee;
+        if (args.size() != callable.arity()) {
             throw new RuntimeError(call.paren, "Expected " +
-                function.arity() + " arguments but received " +
+                callable.arity() + " arguments but received " +
                 args.size() + " arguments.");
         }
         
-        return function.call(this, args);
+        return callable.call(this, args);
     }
 
     @Override

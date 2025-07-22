@@ -7,9 +7,10 @@ import java.util.Map;
 import java.util.Stack;
 
 public class Resolver implements Expr.ExprVisitor<Void>, Stmt.StmtVisitor<Void> {
-    private enum EnclosingFunction {
+    private enum FunctionType {
         NONE,
-        FUNCTION
+        FUNCTION,
+        METHOD
     }
     private enum LoopStatus {
         NONE,
@@ -47,7 +48,7 @@ public class Resolver implements Expr.ExprVisitor<Void>, Stmt.StmtVisitor<Void> 
     private final Interpreter interpreter;
     private final Stack<Map<String, ResolverInfo>> scopes;
     private final Map<String, ResolverInfo> globals;
-    EnclosingFunction currentFunction = EnclosingFunction.NONE;
+    FunctionType currentFunction = FunctionType.NONE;
     LoopStatus loopStatus = LoopStatus.NONE;
 
     Resolver(Interpreter interpreter) {
@@ -113,7 +114,7 @@ public class Resolver implements Expr.ExprVisitor<Void>, Stmt.StmtVisitor<Void> 
     public Void visitFunctionDefStmt(Stmt.FunctionDef funcDef) {
         declare(funcDef.name, ObjectType.FUNCTION);
         define(funcDef.name);
-        resolveFunctionDef(funcDef, EnclosingFunction.FUNCTION);
+        resolveFunctionDef(funcDef, FunctionType.FUNCTION);
 
         return null;
     }
@@ -146,7 +147,7 @@ public class Resolver implements Expr.ExprVisitor<Void>, Stmt.StmtVisitor<Void> 
 
     @Override
     public Void visitReturnStmt(Stmt.Return stmt) {
-        if (currentFunction == EnclosingFunction.NONE) {
+        if (currentFunction == FunctionType.NONE) {
             Lox.error(stmt.keyword,
                         "Cannot return from top-level code.");
         }
@@ -233,9 +234,10 @@ public class Resolver implements Expr.ExprVisitor<Void>, Stmt.StmtVisitor<Void> 
     public Void visitClassStmt(Stmt.Class classDecl) {
         declare(classDecl.name, ObjectType.CLASS);
         define(classDecl.name);
-        // for (Stmt.FunctionDef funcDef : classDecl.methods) {
-        //     resolveFunctionDef(funcDef, EnclosingFunction.NONE);
-        // }
+        FunctionType declaration = FunctionType.METHOD;
+        for (Stmt.FunctionDef funcDef : classDecl.methods) {
+            resolveFunctionDef(funcDef, declaration);
+        }
 
         return null;
     }
@@ -319,8 +321,8 @@ public class Resolver implements Expr.ExprVisitor<Void>, Stmt.StmtVisitor<Void> 
 
     /** Helper methods */
 
-    private void resolveFunctionDef(Stmt.FunctionDef funcDef, EnclosingFunction type) {
-        EnclosingFunction enclosingFunction = currentFunction;
+    private void resolveFunctionDef(Stmt.FunctionDef funcDef, FunctionType type) {
+        FunctionType functionType = currentFunction;
         currentFunction = type;
         beginScope();
         for (Token param : funcDef.params) {
@@ -332,7 +334,7 @@ public class Resolver implements Expr.ExprVisitor<Void>, Stmt.StmtVisitor<Void> 
             resolve(stmt);
         }
         endScope();
-        currentFunction = enclosingFunction;
+        currentFunction = functionType;
     }
 
     private void resolveLocal(Expr expr, Token name) {
