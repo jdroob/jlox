@@ -711,6 +711,11 @@ public class Interpreter implements Expr.ExprVisitor<Object>, Stmt.StmtVisitor<V
             "Only instances have properties.");
     }
 
+    @Override
+    public Object visitThisExpr(Expr.This thisExpr) {
+        return lookUpVariable(thisExpr.keyword, thisExpr);
+    }
+
     //==================
     // Helper methods
     //==================

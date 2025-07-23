@@ -49,9 +49,9 @@ import static com.craftinginterpreters.lox.TokenType.*;
  * postfix      -> IDENTIFIER ("++" | "--") | call ;
  * call         -> primary ( "(" arguments? ")" | IDENTIFIER "." )* ;
  * arguments    -> expression ( "," expression )* ;
- * primary      -> NUMBER | STRING | "true" | "false" | "nil" | "(" expression ")" | IDENTIFIER | 
+ * primary      -> NUMBER | STRING | "true" | "false" | "nil" | "this" | "(" expression ")" | IDENTIFIER | 
  *                 anonymous | error ;
- * anonymous    -> "fun (" parameters? ")" blockStmt ;
+ * anonymous    -> "fun (" parameters? ")" blockStmt ;G
  * error        -> ( ("==" | "!=" | ">" | "<" | ">=" | "<=" | "+" | "-" | "*" | "/") expression ) ;
  */
 
@@ -623,13 +623,14 @@ public class Parser {
     }
 
     private Expr primary() {
-        // primary -> NUMBER | STRING | "true" | "false" | "nil" | "(" expression ")" | IDENTIFIER | error ;
+        // primary -> NUMBER | STRING | "true" | "false" | "nil" | "this" | "(" expression ")" | IDENTIFIER | error ;
         if (match(FALSE)) return new Expr.Literal(false);
         if (match(TRUE)) return new Expr.Literal(true);
         if (match(NIL)) return new Expr.Literal(null);
         if (match(NUMBER, STRING)) return new Expr.Literal(previous().literal);
         if (match(IDENTIFIER)) return new Expr.Variable(previous());
         if (match(FUN)) return anonymousFun();
+        if (match(THIS)) return new Expr.This(previous());
 
         if (match(LEFT_PAREN)) {
             Expr expr = expression();

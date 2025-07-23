@@ -42,4 +42,10 @@ public class LoxFunction implements LoxCallable {
         return "<fn: " + funcDef.name.lexeme + ">";
     }
 
+    public LoxFunction bind(LoxInstance instance) {
+        Environment environment = new Environment(closure);
+        environment.define("this", instance);
+        return new LoxFunction(funcDef, environment);
+    }
+
 }

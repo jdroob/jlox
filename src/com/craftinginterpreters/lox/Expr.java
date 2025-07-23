@@ -18,6 +18,7 @@ abstract class Expr {
 		R visitAnonymousExpr(Expr.Anonymous anonymous);
 		R visitGetExpr(Expr.Get get);
 		R visitSetExpr(Expr.Set set);
+		R visitThisExpr(Expr.This thisExpr);
 	}
 	abstract <R> R accept(ExprVisitor<R> visitor);
 	static class Binary extends Expr {
@@ -223,5 +224,17 @@ abstract class Expr {
 		final Expr object;
 		final Token name;
 		final Expr rhs;
+	}
+	static class This extends Expr {
+		This(Token keyword) {
+			this.keyword = keyword;
+		}
+
+		@Override
+		public <R> R accept(ExprVisitor<R> visitor) {
+			return visitor.visitThisExpr(this);
+		}
+
+		final Token keyword;
 	}
 }

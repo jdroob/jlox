@@ -12,6 +12,10 @@ public class Resolver implements Expr.ExprVisitor<Void>, Stmt.StmtVisitor<Void> 
         FUNCTION,
         METHOD
     }
+    private enum ClassType {
+        NONE,
+        CLASS
+    }
     private enum LoopStatus {
         NONE,
         LOOP
@@ -20,7 +24,8 @@ public class Resolver implements Expr.ExprVisitor<Void>, Stmt.StmtVisitor<Void> 
         UNINITIALIZED,
         VARIABLE,
         FUNCTION,
-        CLASS
+        CLASS,
+        INSTANCE
     }
     private class ResolverInfo {
         public Boolean isDefined;
@@ -49,6 +54,7 @@ public class Resolver implements Expr.ExprVisitor<Void>, Stmt.StmtVisitor<Void> 
     private final Stack<Map<String, ResolverInfo>> scopes;
     private final Map<String, ResolverInfo> globals;
     FunctionType currentFunction = FunctionType.NONE;
+    ClassType currentClass = ClassType.NONE;
     LoopStatus loopStatus = LoopStatus.NONE;
 
     Resolver(Interpreter interpreter) {
@@ -188,6 +194,7 @@ public class Resolver implements Expr.ExprVisitor<Void>, Stmt.StmtVisitor<Void> 
             Lox.error(stmt.keyword,
                 "Cannot 'break' outside of loop");
         }
+        
         return null;
     }
 
@@ -197,6 +204,7 @@ public class Resolver implements Expr.ExprVisitor<Void>, Stmt.StmtVisitor<Void> 
             Lox.error(stmt.keyword,
                     "Cannot 'continue' outside of loop");
         }
+        
         return null;
     }
 
@@ -232,13 +240,19 @@ public class Resolver implements Expr.ExprVisitor<Void>, Stmt.StmtVisitor<Void> 
 
     @Override
     public Void visitClassStmt(Stmt.Class classDecl) {
+        ClassType enclosingClass = currentClass;
+        currentClass = ClassType.CLASS;
         declare(classDecl.name, ObjectType.CLASS);
         define(classDecl.name);
+        beginScope();
+        scopes.peek().put("this", new ResolverInfo(true, false, ObjectType.INSTANCE, new Token(TokenType.THIS, "this", null, 0)));
         FunctionType declaration = FunctionType.METHOD;
         for (Stmt.FunctionDef funcDef : classDecl.methods) {
             resolveFunctionDef(funcDef, declaration);
         }
-
+        endScope();
+        currentClass = enclosingClass;
+        
         return null;
     }
 
@@ -316,6 +330,16 @@ public class Resolver implements Expr.ExprVisitor<Void>, Stmt.StmtVisitor<Void> 
         resolve(setExpr.rhs);
         // Property access is dynamic, therefore no need to resolve setExpr.name
 
+        return null;
+    }
+
+    @Override
+    public Void visitThisExpr(Expr.This thisExpr) {
+        if (currentClass == ClassType.NONE) {
+            Lox.error(thisExpr.keyword, "Cannot use this outside of class.");
+        }
+        resolveLocal(thisExpr, thisExpr.keyword);
+        
         return null;
     }
 
