@@ -379,9 +379,9 @@ public class Interpreter implements Expr.ExprVisitor<Object>, Stmt.StmtVisitor<V
     @Override
     public Void visitFunctionDefStmt(Stmt.FunctionDef funcDef) {
         if (env.contains(funcDef.name)) {
-            env.update(funcDef.name, new LoxFunction(funcDef, this.env));
+            env.update(funcDef.name, new LoxFunction(funcDef, this.env, false));
         } else {
-            env.define(funcDef.name.lexeme, new LoxFunction(funcDef, this.env));
+            env.define(funcDef.name.lexeme, new LoxFunction(funcDef, this.env, false));
         }
 
         return null;
@@ -623,7 +623,7 @@ public class Interpreter implements Expr.ExprVisitor<Object>, Stmt.StmtVisitor<V
         env.define(classStmt.name.lexeme, null);
         Map<String, LoxFunction> methods = new HashMap<>();
         for (Stmt.FunctionDef method : classStmt.methods) {
-            LoxFunction function = new LoxFunction(method, this.env);
+            LoxFunction function = new LoxFunction(method, this.env, method.name.lexeme.equals("init"));
             methods.put(method.name.lexeme, function);
         }
         LoxClass klass = new LoxClass(classStmt.name.lexeme, methods, this.env);
@@ -684,7 +684,7 @@ public class Interpreter implements Expr.ExprVisitor<Object>, Stmt.StmtVisitor<V
 
     @Override
     public Object visitAnonymousExpr(Expr.Anonymous anon) {
-        return new LoxFunction(anon.params, anon.body, this.env);
+        return new LoxFunction(anon.params, anon.body, this.env, false);
     }
 
     @Override

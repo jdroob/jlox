@@ -14,41 +14,35 @@ public class LoxClass implements LoxCallable {
         this.name = name;
         this.methods = methods;
         this.enclosing = enclosing;
-        this.arity = 0;
     }
     
-    // Anonymous function definition
+    // TODO: Anonymous function definition
     // LoxClass(List<Token> params, Stmt body, Environment closure) {
     //     this.funcDef = new Stmt.FunctionDef(new Token(TokenType.IDENTIFIER, "anon", null, 0), params, body);
     //     this.closure = closure;
     // }
 
     @Override
-    public int arity() { return arity; }
+    public int arity() { 
+        LoxFunction initMethod = findMethod("init");
+        if (initMethod == null) {
+            return 0;
+            // System.out.println("DEBUG: setting " + this.toString() + " arity to " + this.arity);
+        }
+        return initMethod.arity();
+     }
 
     @Override
     public Object call(Interpreter interpreter, List<Object> args) {
         Environment env = new Environment(this.enclosing);
 
         try {
-            // int N = this.arity();
-            // for (int i = 0; i < N; i++) {
-            //     env.define(funcDef.params.get(i).lexeme, args.get(i));
-            // }
-            // for (LoxFunction method : this.methods.values()) {
-            //     if (method.name.lexeme.toLowerCase().equals(this.name.toLowerCase())) {
-            //         interpreter.executeBlockStmt((Stmt.Block)method.body, env, true);
-            //         break;
-            //     }
-            // }
-            if (methods.containsKey(name)) {
-                for (LoxFunction method : methods.values()) {
-                    if (method.arity() == args.size()) {
-                        method.call(interpreter, args);
-                    }
-                }
+            LoxInstance instance = instantiate();
+            LoxFunction initMethod = findMethod("init");
+            if (initMethod != null) {   // run constructor
+                findMethod("init").bind(instance).call(interpreter, args);
             }
-            return instantiate();
+            return instance;
         } catch (Return r) {
             return r.returnValue;
         }
@@ -61,7 +55,7 @@ public class LoxClass implements LoxCallable {
         return null;
     }
     
-    private Object instantiate() {
+    private LoxInstance instantiate() {
         return new LoxInstance(this);
     }
 
@@ -69,5 +63,4 @@ public class LoxClass implements LoxCallable {
     public String toString() {
         return "<class: " + name + ">";
     }
-
 }
