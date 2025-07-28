@@ -3,24 +3,20 @@ package com.craftinginterpreters.lox;
 import java.util.List;
 import java.util.Map;
 
-public class LoxClass implements LoxCallable {
+public class LoxClass extends LoxInstance implements LoxCallable {
     private final String name;
     private final Map<String, LoxFunction> methods;
-    private final Environment enclosing;
+    private final Map<String, LoxFunction> staticMethods;
     private Integer arity;
 
     // Lox class definition
-    LoxClass(String name, Map<String, LoxFunction> methods, Environment enclosing) {
+    LoxClass(String name, Map<String, LoxFunction> methods, Map<String, LoxFunction> staticMethods) {
+        super(null);
         this.name = name;
         this.methods = methods;
-        this.enclosing = enclosing;
+        this.staticMethods = staticMethods;
+        // this.klass = this;
     }
-    
-    // TODO: Anonymous function definition
-    // LoxClass(List<Token> params, Stmt body, Environment closure) {
-    //     this.funcDef = new Stmt.FunctionDef(new Token(TokenType.IDENTIFIER, "anon", null, 0), params, body);
-    //     this.closure = closure;
-    // }
 
     @Override
     public int arity() { 
@@ -34,8 +30,6 @@ public class LoxClass implements LoxCallable {
 
     @Override
     public Object call(Interpreter interpreter, List<Object> args) {
-        Environment env = new Environment(this.enclosing);
-
         try {
             LoxInstance instance = instantiate();
             LoxFunction initMethod = findMethod("init");
@@ -51,6 +45,13 @@ public class LoxClass implements LoxCallable {
     public LoxFunction findMethod(String name) {
         if (methods.containsKey(name)) {
             return methods.get(name);
+        }
+        return null;
+    }
+
+    public LoxFunction findStaticMethod(String name) {
+        if (staticMethods.containsKey(name)) {
+            return staticMethods.get(name);
         }
         return null;
     }

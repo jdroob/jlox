@@ -622,11 +622,16 @@ public class Interpreter implements Expr.ExprVisitor<Object>, Stmt.StmtVisitor<V
     public Void visitClassStmt(Stmt.Class classStmt) {
         env.define(classStmt.name.lexeme, null);
         Map<String, LoxFunction> methods = new HashMap<>();
+        Map<String, LoxFunction> staticMethods = new HashMap<>();
         for (Stmt.FunctionDef method : classStmt.methods) {
             LoxFunction function = new LoxFunction(method, this.env, method.name.lexeme.equals("init"));
-            methods.put(method.name.lexeme, function);
+            if (method.isStaticMethod == true) {
+                staticMethods.put(method.name.lexeme, function);
+            } else {
+                methods.put(method.name.lexeme, function);
+            }
         }
-        LoxClass klass = new LoxClass(classStmt.name.lexeme, methods, this.env);
+        LoxClass klass = new LoxClass(classStmt.name.lexeme, methods, staticMethods);
         env.update(classStmt.name, klass);
         return null;
     }
@@ -692,6 +697,10 @@ public class Interpreter implements Expr.ExprVisitor<Object>, Stmt.StmtVisitor<V
         Object object = evaluate(getExpr.object);
         if (object instanceof LoxInstance) {
             return ((LoxInstance)object).get(getExpr.name);
+        }
+        
+        if (object instanceof LoxClass) {
+            return ((LoxClass)object).get(getExpr.name);
         }
         
         throw new RuntimeError(getExpr.name,

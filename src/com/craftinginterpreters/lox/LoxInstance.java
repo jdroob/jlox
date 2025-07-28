@@ -4,8 +4,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class LoxInstance {
-    private final LoxClass klass;
-    private final Map<String, Object> fields = new HashMap<>();
+    protected LoxClass klass;
+    protected Map<String, Object> fields = new HashMap<>();
     LoxInstance(LoxClass klass) {
         this.klass = klass;
     }
@@ -16,12 +16,11 @@ public class LoxInstance {
     }
 
     public Object get(Token name) {
-        if (fields.containsKey(name.lexeme)) {
-            return fields.get(name.lexeme);
-        }
+        Object field = getField(name);
+        if (field != null) return field;
 
-        LoxFunction method = klass.findMethod(name.lexeme);
-        if (method != null) return method.bind(this);
+        Object method = getMethod(name);
+        if (method != null) return method;
         
         throw new RuntimeError(name,
             "Undefined property " + name.lexeme + ".");
@@ -31,5 +30,53 @@ public class LoxInstance {
         fields.put(name.lexeme, rhsVal);
         
         return rhsVal;
+    }
+
+    /* Helper methods */
+
+    private Object getField(Token name) {
+        // instance fields LUT
+        if (fields.containsKey(name.lexeme)) {
+            return fields.get(name.lexeme);
+        }
+
+        // class (static) fields LUT
+        if (!(this instanceof LoxClass)) {
+            if (klass.fields.containsKey(name.lexeme)) {
+                return klass.fields.get(name.lexeme);
+            }
+        }
+
+        return null;
+    }
+
+    private Object getMethod(Token name) {
+        LoxFunction method = getNonStaticMethod(name);
+        if (method != null) return method.bind(this);
+
+        method = getStaticMethod(name);
+        if (method != null) return method.bind(this);
+
+        return null;
+    }
+
+    private LoxFunction getNonStaticMethod(Token name) {
+        // methods LUT
+        if (this instanceof LoxClass) {
+            LoxFunction method = ((LoxClass)this).findMethod(name.lexeme);
+            if (method != null) {
+                throw new RuntimeError(name, 
+                            "class object cannot access non-static method.");
+            }
+            return null;
+        }
+        return klass.findMethod(name.lexeme);
+    }
+
+    private LoxFunction getStaticMethod(Token name) {
+        // static methods LUT
+        if (this instanceof LoxClass)
+            return ((LoxClass)this).findStaticMethod(name.lexeme);
+        return klass.findStaticMethod(name.lexeme);
     }
 }

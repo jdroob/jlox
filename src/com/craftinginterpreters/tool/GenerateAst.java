@@ -39,7 +39,7 @@ public class GenerateAst {
             "Block : List<Stmt> statements",
             "Break : Token keyword",
             "Continue : Token keyword",
-            "FunctionDef : Token name, List<Token> params, Stmt body",
+            "FunctionDef : Token name, List<Token> params, Stmt body, Boolean isStaticMethod",
             "Return : Token keyword, Expr value",
             "Class : Token name, List<Stmt.FunctionDef> methods"
         ));
