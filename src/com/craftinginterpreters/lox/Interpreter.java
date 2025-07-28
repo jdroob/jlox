@@ -708,7 +708,7 @@ public class Interpreter implements Expr.ExprVisitor<Object>, Stmt.StmtVisitor<V
         }
         
         throw new RuntimeError(setExpr.name,
-            "Only instances have properties.");
+            "Properties can only be set for instances.");
     }
 
     @Override
@@ -765,7 +765,13 @@ public class Interpreter implements Expr.ExprVisitor<Object>, Stmt.StmtVisitor<V
     }
     
     private boolean isEqual(Object left, Object right) {
-        if (left == null & right == null) return true;
+        if (left instanceof LoxFunction ||
+            left instanceof LoxInstance ||
+            left instanceof LoxClass) {
+                left = System.identityHashCode(left);
+                right = System.identityHashCode(right);
+            }
+        if (left == null && right == null) return true;
         if (left == null) return false;
         if (right == null) return false;
 
@@ -779,11 +785,14 @@ public class Interpreter implements Expr.ExprVisitor<Object>, Stmt.StmtVisitor<V
     }
 
     private void checkTruthyOperands(Token operator, Object left, Object right) {
-        if ((left instanceof Boolean && right instanceof Boolean) ||
-            (left instanceof Double && right instanceof Double)   ||
-            (left instanceof String && right instanceof String)   || 
-            (isTruthy(left) && right == null)                     ||
-            (left == null && isTruthy(right)))
+        if ((left instanceof Boolean && right instanceof Boolean)         ||
+            (left instanceof Double && right instanceof Double)           ||
+            (left instanceof String && right instanceof String)           || 
+            (isTruthy(left) && right == null)                             ||
+            (left == null && isTruthy(right))                             ||
+            (left instanceof LoxInstance && right instanceof LoxInstance) ||
+            (left instanceof LoxFunction && right instanceof LoxFunction) ||
+            (left instanceof LoxClass && right instanceof LoxClass))
             return;
 
         throw new RuntimeError(operator, "Operands must be matching truthy types.");
