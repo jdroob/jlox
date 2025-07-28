@@ -16,7 +16,7 @@ public class LoxFunction implements LoxCallable {
     
     // Anonymous function definition
     LoxFunction(List<Token> params, Stmt body, Environment closure, Boolean isInit) {
-        this.funcDef = new Stmt.FunctionDef(new Token(TokenType.IDENTIFIER, "anon", null, 0), params, body);
+        this.funcDef = new Stmt.FunctionDef(new Token(TokenType.IDENTIFIER, "anon", null, 0), params, body, false);
         this.closure = closure;
         this.isInitializer = isInit;
     }
@@ -49,6 +49,12 @@ public class LoxFunction implements LoxCallable {
     public LoxFunction bind(LoxInstance instance) {
         Environment environment = new Environment(closure);
         environment.define("this", instance);
+        return new LoxFunction(funcDef, environment, isInitializer);
+    }
+
+    public LoxFunction bind(LoxClass klass) {
+        Environment environment = new Environment(closure);
+        environment.define("this", klass);
         return new LoxFunction(funcDef, environment, isInitializer);
     }
 

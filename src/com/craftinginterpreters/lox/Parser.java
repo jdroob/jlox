@@ -12,8 +12,9 @@ import static com.craftinginterpreters.lox.TokenType.*;
  * ------------------
  * program      -> declaration* EOF ;
  * declaration  -> funDef | varDecl | classDecl | statement ;
- * classDecl    -> "class" IDENTIFIER "{" function* "}" ;
+ * classDecl    -> "class" IDENTIFIER "{" (function | staticMethod)* "}" ;
  * funDef       -> "fun" function ;
+ * staticMethod -> "class" function ;
  * function     -> IDENTIFIER "(" parameters? ")" blockStmt ;
  * parameters   -> IDENTIFIER ( "," IDENTIFIER )* ;
  * varDecl      -> "var" IDENTIFIER ( "=" expression )? ";" ;
@@ -124,14 +125,18 @@ public class Parser {
     }
 
     private Stmt classDecl() {
-        // classDecl -> "class" IDENTIFIER "{" function* "}" ;
+        // classDecl -> "class" IDENTIFIER "{" ( function | staticMethod )* "}" ;
         Token name = consume(IDENTIFIER, "Expect a class name.");
         consume(LEFT_BRACE, "Expected a '{'.");
 
         List<Stmt.FunctionDef> methods = new ArrayList<>();
+        String kind = "method";
         while (!check(RIGHT_BRACE) && !isAtEnd()) {
+            // staticMethod -> "class" function ;
             // function -> IDENTIFIER "(" parameters? ")" blockStmt ;
-            methods.add((Stmt.FunctionDef)functionDef("method"));
+            if (match(CLASS)) kind = "static_method";
+            methods.add((Stmt.FunctionDef)functionDef(kind));
+            kind = "method";
         }
 
         consume(RIGHT_BRACE, "Expected a '}'");
@@ -141,6 +146,7 @@ public class Parser {
     private Stmt functionDef(String kind) {
         // funDef   -> "fun" function ;
         // function ->  IDENTIFIER "(" parameters? ")" blockStmt ;
+        Boolean isStaticMethod = kind.equals("static_method");
         Token name = consume(IDENTIFIER, "Expect a " + kind + " name.");
         consume(LEFT_PAREN, "Expected a '(' after " + kind + " name.");
         List<Token> params = new ArrayList<>();
@@ -157,7 +163,7 @@ public class Parser {
         
         Stmt body = blockStmt();
 
-        return new Stmt.FunctionDef(name, params, body);
+        return new Stmt.FunctionDef(name, params, body, isStaticMethod);
     }
 
     private Stmt statement() {

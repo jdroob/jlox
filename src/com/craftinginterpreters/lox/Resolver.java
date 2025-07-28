@@ -10,6 +10,7 @@ public class Resolver implements Expr.ExprVisitor<Void>, Stmt.StmtVisitor<Void> 
     private enum FunctionType {
         NONE,
         FUNCTION,
+        ANONYMOUS,
         INITIALIZER,
         METHOD
     }
@@ -161,7 +162,7 @@ public class Resolver implements Expr.ExprVisitor<Void>, Stmt.StmtVisitor<Void> 
         if (stmt.value != null) {
             if (currentFunction == FunctionType.INITIALIZER) {
                 Lox.error(stmt.keyword,
-                            "Cannot use return a value from an initializer.");
+                            "Cannot return a value from an initializer.");
             }
             resolve(stmt.value);
         }
@@ -252,8 +253,14 @@ public class Resolver implements Expr.ExprVisitor<Void>, Stmt.StmtVisitor<Void> 
         beginScope();
         scopes.peek().put("this", new ResolverInfo(true, false, ObjectType.INSTANCE, new Token(TokenType.THIS, "this", null, 0)));
         FunctionType declaration = FunctionType.METHOD;
+        Boolean isInit = false;
         for (Stmt.FunctionDef funcDef : classDecl.methods) {
-            if (funcDef.name.lexeme.equals("init")) declaration = FunctionType.INITIALIZER;
+            isInit = funcDef.name.lexeme.equals("init");
+            if (isInit && funcDef.isStaticMethod) {
+                Lox.error(funcDef.name,
+                            "initializer cannot be static.");
+            }
+            if (isInit) declaration = FunctionType.INITIALIZER;
             resolveFunctionDef(funcDef, declaration);
         }
         endScope();
@@ -308,6 +315,8 @@ public class Resolver implements Expr.ExprVisitor<Void>, Stmt.StmtVisitor<Void> 
         /**
          * TODO: Eliminate duplicate code b/w this function & resolveFunctionDef
          */
+        FunctionType enclosing = currentFunction;
+        currentFunction = FunctionType.ANONYMOUS;
         beginScope();
         for (Token param : expr.params) {
             declare(param, ObjectType.FUNCTION);
@@ -318,6 +327,7 @@ public class Resolver implements Expr.ExprVisitor<Void>, Stmt.StmtVisitor<Void> 
             resolve(stmt);
         }
         endScope();
+        currentFunction = enclosing;
 
         return null;
     }
