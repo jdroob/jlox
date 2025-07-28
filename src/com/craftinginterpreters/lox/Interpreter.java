@@ -780,7 +780,7 @@ public class Interpreter implements Expr.ExprVisitor<Object>, Stmt.StmtVisitor<V
                 left = System.identityHashCode(left);
                 right = System.identityHashCode(right);
             }
-        if (left == null & right == null) return true;
+        if (left == null && right == null) return true;
         if (left == null) return false;
         if (right == null) return false;
 
