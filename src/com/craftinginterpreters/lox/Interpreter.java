@@ -767,9 +767,12 @@ public class Interpreter implements Expr.ExprVisitor<Object>, Stmt.StmtVisitor<V
     }
 
     private boolean isTruthy(Object object) {
-        return object instanceof Boolean || 
-               object instanceof String  || 
-               object instanceof Double  ||
+        return object instanceof Boolean      || 
+               object instanceof String       || 
+               object instanceof Double       ||
+               object instanceof LoxFunction  ||
+               object instanceof LoxClass     ||
+               object instanceof LoxInstance  ||
                object == null;
     }
     

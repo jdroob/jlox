@@ -3,7 +3,7 @@ package com.craftinginterpreters.lox;
 import java.util.List;
 import java.util.Map;
 
-public class LoxClass implements LoxCallable {
+public class LoxClass extends LoxInstance implements LoxCallable {
     private final String name;
     private final Map<String, LoxFunction> methods;
     private final Map<String, LoxFunction> staticMethods;
@@ -11,9 +11,11 @@ public class LoxClass implements LoxCallable {
 
     // Lox class definition
     LoxClass(String name, Map<String, LoxFunction> methods, Map<String, LoxFunction> staticMethods) {
+        super(null);
         this.name = name;
         this.methods = methods;
         this.staticMethods = staticMethods;
+        // this.klass = this;
     }
 
     @Override
@@ -38,14 +40,6 @@ public class LoxClass implements LoxCallable {
         } catch (Return r) {
             return r.returnValue;
         }
-    }
-
-    public Object get(Token name) {
-        LoxFunction method = findStaticMethod(name.lexeme);
-        if (method != null) return method.bind(this);
-        
-        throw new RuntimeError(name,
-            "Undefined property " + name.lexeme + ".");
     }
 
     public LoxFunction findMethod(String name) {
