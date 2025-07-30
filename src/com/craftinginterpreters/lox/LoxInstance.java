@@ -70,11 +70,4 @@ public class LoxInstance {
         }
         return klass.findMethod(name.lexeme);
     }
-
-    // private LoxFunction getStaticMethod(Token name) {
-    //     // static methods LUT
-    //     if (this instanceof LoxClass)
-    //         return ((LoxClass)this).findStaticMethod(name.lexeme);
-    //     return klass.findStaticMethod(name.lexeme);
-    // }
 }

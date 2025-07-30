@@ -45,13 +45,6 @@ public class LoxClass extends LoxInstance implements LoxCallable {
         }
         return null;
     }
-
-    // public LoxFunction findStaticMethod(String name) {
-    //     if (staticMethods.containsKey(name)) {
-    //         return staticMethods.get(name);
-    //     }
-    //     return null;
-    // }
     
     private LoxInstance instantiate() {
         return new LoxInstance(this);
