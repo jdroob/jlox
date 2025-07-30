@@ -51,20 +51,18 @@ public class LoxInstance {
     }
 
     private Object getMethod(Token name) {
-        LoxFunction method = getNonStaticMethod(name);
-        if (method != null) return method.bind(this);
-
-        method = getStaticMethod(name);
+        LoxFunction method = _getMethod(name);
         if (method != null) return method.bind(this);
 
         return null;
     }
 
-    private LoxFunction getNonStaticMethod(Token name) {
+    private LoxFunction _getMethod(Token name) {
         // methods LUT
         if (this instanceof LoxClass) {
             LoxFunction method = ((LoxClass)this).findMethod(name.lexeme);
             if (method != null) {
+                if (method.isStatic) return method;
                 throw new RuntimeError(name, 
                             "class object cannot access non-static method.");
             }
@@ -73,10 +71,10 @@ public class LoxInstance {
         return klass.findMethod(name.lexeme);
     }
 
-    private LoxFunction getStaticMethod(Token name) {
-        // static methods LUT
-        if (this instanceof LoxClass)
-            return ((LoxClass)this).findStaticMethod(name.lexeme);
-        return klass.findStaticMethod(name.lexeme);
-    }
+    // private LoxFunction getStaticMethod(Token name) {
+    //     // static methods LUT
+    //     if (this instanceof LoxClass)
+    //         return ((LoxClass)this).findStaticMethod(name.lexeme);
+    //     return klass.findStaticMethod(name.lexeme);
+    // }
 }

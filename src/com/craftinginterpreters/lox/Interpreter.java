@@ -379,9 +379,9 @@ public class Interpreter implements Expr.ExprVisitor<Object>, Stmt.StmtVisitor<V
     @Override
     public Void visitFunctionDefStmt(Stmt.FunctionDef funcDef) {
         if (env.contains(funcDef.name)) {
-            env.update(funcDef.name, new LoxFunction(funcDef, this.env, false, false));
+            env.update(funcDef.name, new LoxFunction(funcDef, this.env, false, false, false));
         } else {
-            env.define(funcDef.name.lexeme, new LoxFunction(funcDef, this.env, false, false));
+            env.define(funcDef.name.lexeme, new LoxFunction(funcDef, this.env, false, false, false));
         }
 
         return null;
@@ -622,16 +622,17 @@ public class Interpreter implements Expr.ExprVisitor<Object>, Stmt.StmtVisitor<V
     public Void visitClassStmt(Stmt.Class classStmt) {
         env.define(classStmt.name.lexeme, null);
         Map<String, LoxFunction> methods = new HashMap<>();
-        Map<String, LoxFunction> staticMethods = new HashMap<>();
+        // Map<String, LoxFunction> staticMethods = new HashMap<>();
         for (Stmt.FunctionDef method : classStmt.methods) {
-            LoxFunction function = new LoxFunction(method, this.env, method.name.lexeme.equals("init"), method.isGetterMethod);
-            if (method.isStaticMethod) {
-                staticMethods.put(method.name.lexeme, function);
-            } else {
-                methods.put(method.name.lexeme, function);
-            }
+            LoxFunction function = new LoxFunction(method, this.env, method.name.lexeme.equals("init"), method.isStaticMethod, method.isGetterMethod);
+            // if (method.isStaticMethod) {
+            //     staticMethods.put(method.name.lexeme, function);
+            // } else {
+            //     methods.put(method.name.lexeme, function);
+            // }
+            methods.put(method.name.lexeme, function);
         }
-        LoxClass klass = new LoxClass(classStmt.name.lexeme, methods, staticMethods);
+        LoxClass klass = new LoxClass(classStmt.name.lexeme, methods);
         env.update(classStmt.name, klass);
         return null;
     }

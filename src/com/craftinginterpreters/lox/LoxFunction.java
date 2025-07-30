@@ -7,13 +7,15 @@ public class LoxFunction implements LoxCallable {
     private final Environment closure;
     private Boolean isInitializer;
     public Boolean isGetter;
+    public Boolean isStatic;
 
     // Ordinary function definition
-    LoxFunction(Stmt.FunctionDef funcDef, Environment closure, Boolean isInit, Boolean isGetter) {
+    LoxFunction(Stmt.FunctionDef funcDef, Environment closure, Boolean isInit, Boolean isStatic, Boolean isGetter) {
         this.funcDef = funcDef;
         this.closure = closure;
         this.isInitializer = isInit;
         this.isGetter = isGetter;
+        this.isStatic = isStatic;
     }
     
     // Anonymous function definition
@@ -22,6 +24,7 @@ public class LoxFunction implements LoxCallable {
         this.closure = closure;
         this.isInitializer = isInit;
         this.isGetter = false;
+        this.isStatic = false;
     }
 
     @Override
@@ -52,7 +55,7 @@ public class LoxFunction implements LoxCallable {
     public LoxFunction bind(LoxInstance instance) {
         Environment environment = new Environment(closure);
         environment.define("this", instance);
-        return new LoxFunction(funcDef, environment, isInitializer, isGetter);
+        return new LoxFunction(funcDef, environment, isInitializer, isStatic, isGetter);
     }
 
     // public LoxFunction bind(LoxClass klass) {
