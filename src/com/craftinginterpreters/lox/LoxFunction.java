@@ -6,19 +6,22 @@ public class LoxFunction implements LoxCallable {
     private final Stmt.FunctionDef funcDef;
     private final Environment closure;
     private Boolean isInitializer;
+    public Boolean isGetter;
 
     // Ordinary function definition
-    LoxFunction(Stmt.FunctionDef funcDef, Environment closure, Boolean isInit) {
+    LoxFunction(Stmt.FunctionDef funcDef, Environment closure, Boolean isInit, Boolean isGetter) {
         this.funcDef = funcDef;
         this.closure = closure;
         this.isInitializer = isInit;
+        this.isGetter = isGetter;
     }
     
     // Anonymous function definition
     LoxFunction(List<Token> params, Stmt body, Environment closure, Boolean isInit) {
-        this.funcDef = new Stmt.FunctionDef(new Token(TokenType.IDENTIFIER, "anon", null, 0), params, body, false);
+        this.funcDef = new Stmt.FunctionDef(new Token(TokenType.IDENTIFIER, "anon", null, 0), params, body, false, false);
         this.closure = closure;
         this.isInitializer = isInit;
+        this.isGetter = false;
     }
 
     @Override
@@ -49,13 +52,13 @@ public class LoxFunction implements LoxCallable {
     public LoxFunction bind(LoxInstance instance) {
         Environment environment = new Environment(closure);
         environment.define("this", instance);
-        return new LoxFunction(funcDef, environment, isInitializer);
+        return new LoxFunction(funcDef, environment, isInitializer, isGetter);
     }
 
-    public LoxFunction bind(LoxClass klass) {
-        Environment environment = new Environment(closure);
-        environment.define("this", klass);
-        return new LoxFunction(funcDef, environment, isInitializer);
-    }
+    // public LoxFunction bind(LoxClass klass) {
+    //     Environment environment = new Environment(closure);
+    //     environment.define("this", klass);
+    //     return new LoxFunction(funcDef, environment, isInitializer);
+    // }
 
 }

@@ -141,11 +141,12 @@ abstract class Stmt {
 		final Token keyword;
 	}
 	static class FunctionDef extends Stmt {
-		FunctionDef(Token name, List<Token> params, Stmt body, Boolean isStaticMethod) {
+		FunctionDef(Token name, List<Token> params, Stmt body, Boolean isStaticMethod, Boolean isGetterMethod) {
 			this.name = name;
 			this.params = params;
 			this.body = body;
 			this.isStaticMethod = isStaticMethod;
+			this.isGetterMethod = isGetterMethod;
 		}
 
 		@Override
@@ -157,6 +158,7 @@ abstract class Stmt {
 		final List<Token> params;
 		final Stmt body;
 		final Boolean isStaticMethod;
+		final Boolean isGetterMethod;
 	}
 	static class Return extends Stmt {
 		Return(Token keyword, Expr value) {

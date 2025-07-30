@@ -260,8 +260,13 @@ public class Resolver implements Expr.ExprVisitor<Void>, Stmt.StmtVisitor<Void> 
                 Lox.error(funcDef.name,
                             "initializer cannot be static.");
             }
+            if (isInit && funcDef.isGetterMethod) {
+                Lox.error(funcDef.name,
+                            "initializer cannot be a getter method.");
+            }
             if (isInit) declaration = FunctionType.INITIALIZER;
             resolveFunctionDef(funcDef, declaration);
+            declaration = FunctionType.METHOD;
         }
         endScope();
         currentClass = enclosingClass;
@@ -422,7 +427,7 @@ public class Resolver implements Expr.ExprVisitor<Void>, Stmt.StmtVisitor<Void> 
 
     private void endScope() {
         for (String key : scopes.peek().keySet()) {
-            if (scopes.peek().get(key).isUsed == false &&
+            if (!scopes.peek().get(key).isUsed &&
                 scopes.peek().get(key).objectType == ObjectType.VARIABLE) {
                 Lox.warning(scopes.peek().get(key).name, "Unused variable.");
             }

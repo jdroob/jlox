@@ -12,9 +12,10 @@ import static com.craftinginterpreters.lox.TokenType.*;
  * ------------------
  * program      -> declaration* EOF ;
  * declaration  -> funDef | varDecl | classDecl | statement ;
- * classDecl    -> "class" IDENTIFIER "{" (function | staticMethod)* "}" ;
+ * classDecl    -> "class" IDENTIFIER "{" (function | staticMethod | getterMethod)* "}" ;
  * funDef       -> "fun" function ;
  * staticMethod -> "class" function ;
+ * getterMethod -> IDENTIFIER blockStmt ;
  * function     -> IDENTIFIER "(" parameters? ")" blockStmt ;
  * parameters   -> IDENTIFIER ( "," IDENTIFIER )* ;
  * varDecl      -> "var" IDENTIFIER ( "=" expression )? ";" ;
@@ -125,7 +126,7 @@ public class Parser {
     }
 
     private Stmt classDecl() {
-        // classDecl -> "class" IDENTIFIER "{" ( function | staticMethod )* "}" ;
+        // classDecl -> "class" IDENTIFIER "{" ( function | staticMethod | getterMethod )* "}" ;
         Token name = consume(IDENTIFIER, "Expect a class name.");
         consume(LEFT_BRACE, "Expected a '{'.");
 
@@ -146,24 +147,30 @@ public class Parser {
     private Stmt functionDef(String kind) {
         // funDef   -> "fun" function ;
         // function ->  IDENTIFIER "(" parameters? ")" blockStmt ;
+        // getterMethod -> IDENTIFIER blockStmt ;
         Boolean isStaticMethod = kind.equals("static_method");
+        Boolean isGetterMethod = false;
         Token name = consume(IDENTIFIER, "Expect a " + kind + " name.");
-        consume(LEFT_PAREN, "Expected a '(' after " + kind + " name.");
         List<Token> params = new ArrayList<>();
-        if (!check(RIGHT_PAREN)) {
-            do {
-                if (params.size() >= 255) {
-                    error(peek(), "Cannot have greater than 255 parameters in " + kind);
-                }
-                params.add(consume(IDENTIFIER, "Expect a parameter name."));
-            } while (match(COMMA));
+        if (match(LEFT_PAREN)) {
+            // consume(LEFT_PAREN, "Expected a '(' after " + kind + " name.");
+            if (!check(RIGHT_PAREN)) {
+                do {
+                    if (params.size() >= 255) {
+                        error(peek(), "Cannot have greater than 255 parameters in " + kind);
+                    }
+                    params.add(consume(IDENTIFIER, "Expect a parameter name."));
+                } while (match(COMMA));
+            }
+            consume(RIGHT_PAREN, "Expected a ')'.");
+        } else {
+            isGetterMethod = true;
         }
-        consume(RIGHT_PAREN, "Expected a ')'.");
         consume(LEFT_BRACE, "Expected a '{'.");
         
         Stmt body = blockStmt();
 
-        return new Stmt.FunctionDef(name, params, body, isStaticMethod);
+        return new Stmt.FunctionDef(name, params, body, isStaticMethod, isGetterMethod);
     }
 
     private Stmt statement() {

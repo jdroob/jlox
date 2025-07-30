@@ -15,7 +15,6 @@ public class LoxClass extends LoxInstance implements LoxCallable {
         this.name = name;
         this.methods = methods;
         this.staticMethods = staticMethods;
-        // this.klass = this;
     }
 
     @Override

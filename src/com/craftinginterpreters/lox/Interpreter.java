@@ -379,9 +379,9 @@ public class Interpreter implements Expr.ExprVisitor<Object>, Stmt.StmtVisitor<V
     @Override
     public Void visitFunctionDefStmt(Stmt.FunctionDef funcDef) {
         if (env.contains(funcDef.name)) {
-            env.update(funcDef.name, new LoxFunction(funcDef, this.env, false));
+            env.update(funcDef.name, new LoxFunction(funcDef, this.env, false, false));
         } else {
-            env.define(funcDef.name.lexeme, new LoxFunction(funcDef, this.env, false));
+            env.define(funcDef.name.lexeme, new LoxFunction(funcDef, this.env, false, false));
         }
 
         return null;
@@ -624,8 +624,8 @@ public class Interpreter implements Expr.ExprVisitor<Object>, Stmt.StmtVisitor<V
         Map<String, LoxFunction> methods = new HashMap<>();
         Map<String, LoxFunction> staticMethods = new HashMap<>();
         for (Stmt.FunctionDef method : classStmt.methods) {
-            LoxFunction function = new LoxFunction(method, this.env, method.name.lexeme.equals("init"));
-            if (method.isStaticMethod == true) {
+            LoxFunction function = new LoxFunction(method, this.env, method.name.lexeme.equals("init"), method.isGetterMethod);
+            if (method.isStaticMethod) {
                 staticMethods.put(method.name.lexeme, function);
             } else {
                 methods.put(method.name.lexeme, function);
@@ -696,7 +696,14 @@ public class Interpreter implements Expr.ExprVisitor<Object>, Stmt.StmtVisitor<V
     public Object visitGetExpr(Expr.Get getExpr) {
         Object object = evaluate(getExpr.object);
         if (object instanceof LoxInstance) {
-            return ((LoxInstance)object).get(getExpr.name);
+            Object value = ((LoxInstance)object).get(getExpr.name);
+            if (value instanceof LoxFunction) {
+                LoxFunction method = (LoxFunction)value;
+                if (method.isGetter) {
+                    return method.call(this, new ArrayList<>());
+                }
+            }
+            return value;
         }
         
         if (object instanceof LoxClass) {
