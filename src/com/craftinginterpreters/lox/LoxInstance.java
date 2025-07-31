@@ -34,7 +34,7 @@ public class LoxInstance {
 
     /* Helper methods */
 
-    private Object getField(Token name) {
+    protected Object getField(Token name) {
         // instance fields LUT
         if (fields.containsKey(name.lexeme)) {
             return fields.get(name.lexeme);
@@ -44,6 +44,16 @@ public class LoxInstance {
         if (!(this instanceof LoxClass)) {
             if (klass.fields.containsKey(name.lexeme)) {
                 return klass.fields.get(name.lexeme);
+            }
+        }
+
+        if (!(this instanceof LoxClass)) {
+            if (klass.superClass != null) {
+                return klass.superClass.getField(name);
+            }
+        } else {
+            if (((LoxClass)this).superClass != null) {
+                return ((LoxClass)this).superClass.getField(name);
             }
         }
 
@@ -59,13 +69,22 @@ public class LoxInstance {
 
     private LoxFunction _getMethod(Token name) {
         // methods LUT
+        LoxFunction method = null;
         if (this instanceof LoxClass) {
-            LoxFunction method = ((LoxClass)this).findMethod(name.lexeme);
+            method = ((LoxClass)this).findMethod(name.lexeme);
             if (method != null) {
                 if (method.isStatic) return method;
                 throw new RuntimeError(name, 
                             "class object cannot access non-static method.");
             }
+            // if (((LoxClass)this).superClass != null) {
+            //     method = ((LoxClass)this).superClass.findMethod(name.lexeme);
+            //     if (method != null) {
+            //         if (method.isStatic) return method;
+            //         throw new RuntimeError(name, 
+            //                 "class object cannot access non-static method.");
+            //     }
+            // }
             return null;
         }
         return klass.findMethod(name.lexeme);

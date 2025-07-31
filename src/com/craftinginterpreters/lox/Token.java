@@ -1,11 +1,5 @@
 package com.craftinginterpreters.lox;
 
-// // Globals
-// TokenType type;
-// char *lexeme;
-// void * literal;
-// int line;
-
 public class Token {
     final TokenType type;
     final String lexeme;

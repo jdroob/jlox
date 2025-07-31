@@ -620,6 +620,14 @@ public class Interpreter implements Expr.ExprVisitor<Object>, Stmt.StmtVisitor<V
 
     @Override
     public Void visitClassStmt(Stmt.Class classStmt) {
+        Object superClass = null;
+        if (classStmt.superClass != null) {
+            superClass = evaluate(classStmt.superClass);
+            if (!(superClass instanceof LoxClass)) {
+                Lox.error(classStmt.superClass.name,
+                          "Superclass must be a class.");
+            }
+        }
         env.define(classStmt.name.lexeme, null);
         Map<String, LoxFunction> methods = new HashMap<>();
         for (Stmt.FunctionDef method : classStmt.methods) {
@@ -632,7 +640,7 @@ public class Interpreter implements Expr.ExprVisitor<Object>, Stmt.StmtVisitor<V
                                                    );
             methods.put(method.name.lexeme, function);
         }
-        LoxClass klass = new LoxClass(classStmt.name.lexeme, methods);
+        LoxClass klass = new LoxClass(classStmt.name.lexeme, (LoxClass)superClass, methods);
         env.update(classStmt.name, klass);
         return null;
     }

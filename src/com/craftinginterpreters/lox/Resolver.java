@@ -249,6 +249,13 @@ public class Resolver implements Expr.ExprVisitor<Void>, Stmt.StmtVisitor<Void> 
         currentClass = ClassType.CLASS;
         declare(classDecl.name, ObjectType.CLASS);
         define(classDecl.name);
+        if (classDecl.superClass != null) {
+            if (classDecl.superClass.name.lexeme.equals(classDecl.name.lexeme)) {
+                Lox.error(classDecl.superClass.name,
+                            "A class cannot inherit from itself.");
+            }
+            resolve(classDecl.superClass);
+        }
         beginScope();
         scopes.peek().put("this", new ResolverInfo(true, false, ObjectType.INSTANCE, new Token(TokenType.THIS, "this", null, 0)));
         FunctionType declaration = FunctionType.METHOD;

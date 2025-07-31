@@ -12,7 +12,7 @@ import static com.craftinginterpreters.lox.TokenType.*;
  * ------------------
  * program      -> declaration* EOF ;
  * declaration  -> funDef | varDecl | classDecl | statement ;
- * classDecl    -> "class" IDENTIFIER "{" (function | staticMethod | getterMethod)* "}" ;
+ * classDecl    -> "class" IDENTIFIER ( "extends" IDENTIFIER )? "{" (function | staticMethod | getterMethod)* "}" ;
  * funDef       -> "fun" function ;
  * staticMethod -> "class" function ;
  * getterMethod -> IDENTIFIER blockStmt ;
@@ -126,8 +126,13 @@ public class Parser {
     }
 
     private Stmt classDecl() {
-        // classDecl -> "class" IDENTIFIER "{" ( function | staticMethod | getterMethod )* "}" ;
+        // classDecl -> "class" IDENTIFIER ( "extends" IDENTIFIER )? "{" ( function | staticMethod | getterMethod )* "}" ;
         Token name = consume(IDENTIFIER, "Expect a class name.");
+        Expr.Variable superClass = null;
+        if (match(EXTENDS)) {
+            consume(IDENTIFIER, "Expect a superclass name.");
+            superClass = new Expr.Variable(previous());
+        }
         consume(LEFT_BRACE, "Expected a '{'.");
 
         List<Stmt.FunctionDef> methods = new ArrayList<>();
@@ -141,7 +146,7 @@ public class Parser {
         }
 
         consume(RIGHT_BRACE, "Expected a '}'");
-        return new Stmt.Class(name, methods);
+        return new Stmt.Class(name, superClass, methods);
     }
 
     private Stmt functionDef(String kind) {

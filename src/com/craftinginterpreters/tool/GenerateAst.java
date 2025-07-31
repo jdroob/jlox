@@ -41,7 +41,7 @@ public class GenerateAst {
             "Continue : Token keyword",
             "FunctionDef : Token name, List<Token> params, Stmt body, Boolean isStaticMethod, Boolean isGetterMethod",
             "Return : Token keyword, Expr value",
-            "Class : Token name, List<Stmt.FunctionDef> methods"
+            "Class : Token name, Expr.Variable superClass, List<Stmt.FunctionDef> methods"
         ));
     }
 
