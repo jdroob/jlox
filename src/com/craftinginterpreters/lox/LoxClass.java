@@ -33,7 +33,7 @@ public class LoxClass extends LoxInstance implements LoxCallable {
             LoxInstance instance = instantiate();
             LoxFunction initMethod = findMethod("init");
             if (initMethod != null) {   // run constructor
-                findMethod("init").bind(instance).call(interpreter, args);
+                findMethod("init").bind(instance, superClass).call(interpreter, args);
             }
             return instance;
         } catch (Return r) {
@@ -51,7 +51,7 @@ public class LoxClass extends LoxInstance implements LoxCallable {
         return null;
     }
     
-    private LoxInstance instantiate() {
+    public LoxInstance instantiate() {
         return new LoxInstance(this);
     }
 

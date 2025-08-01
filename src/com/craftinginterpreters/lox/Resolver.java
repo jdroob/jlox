@@ -258,6 +258,9 @@ public class Resolver implements Expr.ExprVisitor<Void>, Stmt.StmtVisitor<Void> 
         }
         beginScope();
         scopes.peek().put("this", new ResolverInfo(true, false, ObjectType.INSTANCE, new Token(TokenType.THIS, "this", null, 0)));
+        if (classDecl.superClass != null) {
+            scopes.peek().put("super", new ResolverInfo(true, false, ObjectType.INSTANCE, new Token(TokenType.SUPER, "super", null, 0)));
+        }
         FunctionType declaration = FunctionType.METHOD;
         Boolean isInit = false;
         for (Stmt.FunctionDef funcDef : classDecl.methods) {
@@ -366,6 +369,16 @@ public class Resolver implements Expr.ExprVisitor<Void>, Stmt.StmtVisitor<Void> 
             Lox.error(thisExpr.keyword, "Cannot use this outside of class.");
         }
         resolveLocal(thisExpr, thisExpr.keyword);
+        
+        return null;
+    }
+
+    @Override
+    public Void visitSuperExpr(Expr.Super superExpr) {
+        if (currentClass == ClassType.NONE) {
+            Lox.error(superExpr.keyword, "Cannot use super outside of class.");
+        }
+        resolveLocal(superExpr, superExpr.keyword);
         
         return null;
     }

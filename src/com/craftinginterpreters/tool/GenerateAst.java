@@ -27,7 +27,8 @@ public class GenerateAst {
             "Anonymous : List<Token> params, Stmt body",
             "Get : Expr object, Token name",
             "Set : Expr object, Token name, Expr rhs",
-            "This: Token keyword"
+            "This: Token keyword",
+            "Super: Token keyword"
         ));
         defineAst(outputDir, "Stmt", Arrays.asList(
             "Expression : Expr expression",
@@ -115,6 +116,7 @@ public class GenerateAst {
                 typeName.toLowerCase().equals("return") ||
                 typeName.toLowerCase().equals("for") ||
                 typeName.toLowerCase().equals("this") ||
+                typeName.toLowerCase().equals("super") ||
                 typeName.toLowerCase().equals("class")) {
                 hack = typeName.toLowerCase() + baseName;
             } else {

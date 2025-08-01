@@ -47,6 +47,7 @@ public class LoxInstance {
             }
         }
 
+        // check superclass LUT
         if (!(this instanceof LoxClass)) {
             if (klass.superClass != null) {
                 return klass.superClass.getField(name);
@@ -62,7 +63,13 @@ public class LoxInstance {
 
     private Object getMethod(Token name) {
         LoxFunction method = _getMethod(name);
-        if (method != null) return method.bind(this);
+        LoxClass superClass = null;
+        if (!(this instanceof LoxClass)) {
+            superClass = klass.superClass;
+        } else {
+            superClass = ((LoxClass)this).superClass;
+        }
+        if (method != null) return method.bind(this, superClass);
 
         return null;
     }
@@ -77,14 +84,6 @@ public class LoxInstance {
                 throw new RuntimeError(name, 
                             "class object cannot access non-static method.");
             }
-            // if (((LoxClass)this).superClass != null) {
-            //     method = ((LoxClass)this).superClass.findMethod(name.lexeme);
-            //     if (method != null) {
-            //         if (method.isStatic) return method;
-            //         throw new RuntimeError(name, 
-            //                 "class object cannot access non-static method.");
-            //     }
-            // }
             return null;
         }
         return klass.findMethod(name.lexeme);

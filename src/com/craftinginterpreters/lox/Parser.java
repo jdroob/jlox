@@ -641,7 +641,7 @@ public class Parser {
     }
 
     private Expr primary() {
-        // primary -> NUMBER | STRING | "true" | "false" | "nil" | "this" | "(" expression ")" | IDENTIFIER | error ;
+        // primary -> NUMBER | STRING | "true" | "false" | "nil" | "this" | "super" | "(" expression ")" | IDENTIFIER | error ;
         if (match(FALSE)) return new Expr.Literal(false);
         if (match(TRUE)) return new Expr.Literal(true);
         if (match(NIL)) return new Expr.Literal(null);
@@ -649,6 +649,7 @@ public class Parser {
         if (match(IDENTIFIER)) return new Expr.Variable(previous());
         if (match(FUN)) return anonymousFun();
         if (match(THIS)) return new Expr.This(previous());
+        if (match(SUPER)) return new Expr.Super(previous());
 
         if (match(LEFT_PAREN)) {
             Expr expr = expression();

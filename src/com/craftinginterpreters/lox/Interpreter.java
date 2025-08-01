@@ -741,6 +741,11 @@ public class Interpreter implements Expr.ExprVisitor<Object>, Stmt.StmtVisitor<V
         return lookUpVariable(thisExpr.keyword, thisExpr);
     }
 
+    @Override
+    public Object visitSuperExpr(Expr.Super superExpr) {
+        return lookUpVariable(superExpr.keyword, superExpr);
+    }
+
     //==================
     // Helper methods
     //==================
