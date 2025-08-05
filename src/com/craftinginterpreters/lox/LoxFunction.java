@@ -52,13 +52,9 @@ public class LoxFunction implements LoxCallable {
         return "<fn: " + funcDef.name.lexeme + ">";
     }
 
-    public LoxFunction bind(LoxInstance instance, LoxClass superClass) {
+    public LoxFunction bind(LoxInstance instance) {
         Environment environment = new Environment(closure);
         environment.define("this", instance);
-        if (superClass != null) {
-            LoxInstance superInstance = superClass.instantiate();
-            environment.define("super", superInstance);
-        }
         return new LoxFunction(funcDef, environment, isInitializer, isStatic, isGetter);
     }
 }

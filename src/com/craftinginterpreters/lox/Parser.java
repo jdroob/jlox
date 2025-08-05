@@ -641,7 +641,7 @@ public class Parser {
     }
 
     private Expr primary() {
-        // primary -> NUMBER | STRING | "true" | "false" | "nil" | "this" | "super" | "(" expression ")" | IDENTIFIER | error ;
+        // primary -> NUMBER | STRING | "true" | "false" | "nil" | "this" | "super" "." IDENTIFIER | "(" expression ")" | IDENTIFIER | error ;
         if (match(FALSE)) return new Expr.Literal(false);
         if (match(TRUE)) return new Expr.Literal(true);
         if (match(NIL)) return new Expr.Literal(null);
@@ -649,11 +649,16 @@ public class Parser {
         if (match(IDENTIFIER)) return new Expr.Variable(previous());
         if (match(FUN)) return anonymousFun();
         if (match(THIS)) return new Expr.This(previous());
-        if (match(SUPER)) return new Expr.Super(previous());
+        if (match(SUPER)) {
+            Token keyword = previous();
+            consume(DOT, "Expected a '.' after super keyword.");
+            Token method = consume(IDENTIFIER, "Expected an identifier.");
+            return new Expr.Super(keyword, method);
+        }
 
         if (match(LEFT_PAREN)) {
             Expr expr = expression();
-            consume(RIGHT_PAREN, "expected a ')' after expression");
+            consume(RIGHT_PAREN, "Expected a ')' after expression.");
             return new Expr.Grouping(expr);
         }
 

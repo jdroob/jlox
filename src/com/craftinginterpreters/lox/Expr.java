@@ -239,8 +239,9 @@ abstract class Expr {
 		final Token keyword;
 	}
 	static class Super extends Expr {
-		Super(Token keyword) {
+		Super(Token keyword, Token method) {
 			this.keyword = keyword;
+			this.method = method;
 		}
 
 		@Override
@@ -249,5 +250,6 @@ abstract class Expr {
 		}
 
 		final Token keyword;
+		final Token method;
 	}
 }

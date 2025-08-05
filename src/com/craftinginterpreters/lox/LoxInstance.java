@@ -63,13 +63,13 @@ public class LoxInstance {
 
     private Object getMethod(Token name) {
         LoxFunction method = _getMethod(name);
-        LoxClass superClass = null;
-        if (!(this instanceof LoxClass)) {
-            superClass = klass.superClass;
-        } else {
-            superClass = ((LoxClass)this).superClass;
-        }
-        if (method != null) return method.bind(this, superClass);
+        // LoxClass superClass = null;
+        // if (!(this instanceof LoxClass)) {
+        //     superClass = klass.superClass;
+        // } else {
+        //     superClass = ((LoxClass)this).superClass;
+        // }
+        if (method != null) return method.bind(this);
 
         return null;
     }

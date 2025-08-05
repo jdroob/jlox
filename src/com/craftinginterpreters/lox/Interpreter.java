@@ -625,10 +625,14 @@ public class Interpreter implements Expr.ExprVisitor<Object>, Stmt.StmtVisitor<V
             superClass = evaluate(classStmt.superClass);
             if (!(superClass instanceof LoxClass)) {
                 Lox.error(classStmt.superClass.name,
-                          "Superclass must be a class.");
+                "Superclass must be a class.");
             }
         }
         env.define(classStmt.name.lexeme, null);
+        if (superClass != null) {
+            this.env = new Environment(this.env);
+            this.env.define("super", superClass);
+        }
         Map<String, LoxFunction> methods = new HashMap<>();
         for (Stmt.FunctionDef method : classStmt.methods) {
             LoxFunction function = new LoxFunction(
@@ -641,6 +645,9 @@ public class Interpreter implements Expr.ExprVisitor<Object>, Stmt.StmtVisitor<V
             methods.put(method.name.lexeme, function);
         }
         LoxClass klass = new LoxClass(classStmt.name.lexeme, (LoxClass)superClass, methods);
+        if (superClass != null) {
+            this.env = this.env.enclosing;
+        }
         env.update(classStmt.name, klass);
         return null;
     }
@@ -743,7 +750,21 @@ public class Interpreter implements Expr.ExprVisitor<Object>, Stmt.StmtVisitor<V
 
     @Override
     public Object visitSuperExpr(Expr.Super superExpr) {
-        return lookUpVariable(superExpr.keyword, superExpr);
+        int distance = locals.get(superExpr);
+        LoxClass superClass = (LoxClass)env.getAt(new Token(TokenType.IDENTIFIER, "super", null, 0), distance);
+        LoxInstance instance = (LoxInstance)env.getAt(new Token(TokenType.IDENTIFIER, "this", null, 0), distance - 1);
+
+        // TODO: Extend this to support fields and methods
+        //      Call get() instead of findMethod - only bind if a LoxFunction
+        //      is returned
+        LoxFunction method = superClass.findMethod(superExpr.method.lexeme);
+        
+        if (method == null) {
+            throw new RuntimeError(superExpr.method,
+                                    "Undefined property '" + superExpr.method.lexeme + "'.");
+        }
+
+        return method.bind(instance);
     }
 
     //==================
