@@ -135,7 +135,7 @@ public class Parser {
             if (!check(LEFT_BRACE)) {
                 while (match(COMMA)) {
                     if (superClasses.size() >= 255) {
-                        error(peek(), "Cannot have greater than 255 parameters super classes");
+                        error(peek(), "Cannot have greater than 255 super classes");
                     }
                     className = consume(IDENTIFIER, "Expect a superclass name."); 
                     superClasses.add(new Expr.Variable(className));
@@ -282,15 +282,18 @@ public class Parser {
         // blockStmt
         Stmt body = statement();
 
-//        // DESUGARING (for can be expressed as while)
+        /// DESUGARING ('for' can be expressed as while)
 
             /**
              * Reason for not desugaring:
              *      Right now, we're desugaring by pushing the update to the end of the
              *      while body. This is usually fine... EXCEPT our current 'continue' implementation
-             *      then skips the update statement (since in a while loop, it's nothing special).
+             *      then skips the update statement (since in a while loop, there's no requirement to perform an update step).
+             * 
+             *      TLDR; We'd be (i) checking the condition, (ii) executing the body, (iii) if we hit a continue, we skip rest of body and check condition
+             *             *** this presents and issue if we're counting on an update step being executed.
              *      
-             *      Therefore, for now, keeping forStmt and whileStmt as 2 separate nodes in AST.
+             *      In the meantime, to avoid hackiness we're keeping forStmt and whileStmt as 2 separate nodes in AST.
              */
             
 //        if (update != null) {
