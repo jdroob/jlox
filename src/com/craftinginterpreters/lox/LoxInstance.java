@@ -49,12 +49,18 @@ public class LoxInstance {
 
         // check superclass LUT
         if (!(this instanceof LoxClass)) {
-            if (klass.superClass != null) {
-                return klass.superClass.getField(name);
+            if (!klass.superClasses.isEmpty()) {
+                for (LoxClass superClass : klass.superClasses) {
+                    Object field = superClass.getField(name);
+                    if (field != null) return field; 
+                }
             }
         } else {
-            if (((LoxClass)this).superClass != null) {
-                return ((LoxClass)this).superClass.getField(name);
+            if (!((LoxClass)this).superClasses.isEmpty()) {
+                for (LoxClass superClass : ((LoxClass)this).superClasses) {
+                    Object field = superClass.getField(name);
+                    if (field != null) return field; 
+                }
             }
         }
 

@@ -250,15 +250,17 @@ public class Resolver implements Expr.ExprVisitor<Void>, Stmt.StmtVisitor<Void> 
         currentClass = ClassType.CLASS;
         declare(classDecl.name, ObjectType.CLASS);
         define(classDecl.name);
-        if (classDecl.superClass != null) {
+        if (!classDecl.superClasses.isEmpty()) {
             currentClass = ClassType.SUBCLASS;
-            if (classDecl.superClass.name.lexeme.equals(classDecl.name.lexeme)) {
-                Lox.error(classDecl.superClass.name,
-                            "A class cannot inherit from itself.");
+            for (Expr.Variable superClass : classDecl.superClasses) {
+                if (superClass.name.lexeme.equals(classDecl.name.lexeme)) {
+                    Lox.error(superClass.name,
+                                "A class cannot inherit from itself.");
+                }
+                resolve(superClass);
             }
-            resolve(classDecl.superClass);
         }
-        if (classDecl.superClass != null) {
+        if (!classDecl.superClasses.isEmpty()) {
             beginScope();
             scopes.peek().put("super", new ResolverInfo(true, false, ObjectType.INSTANCE, new Token(TokenType.SUPER, "super", null, 0)));
         }
@@ -281,7 +283,7 @@ public class Resolver implements Expr.ExprVisitor<Void>, Stmt.StmtVisitor<Void> 
             declaration = FunctionType.METHOD;
         }
         endScope();
-        if (classDecl.superClass != null) {
+        if (!classDecl.superClasses.isEmpty()) {
             endScope();
         }
         currentClass = enclosingClass;

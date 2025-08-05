@@ -620,18 +620,21 @@ public class Interpreter implements Expr.ExprVisitor<Object>, Stmt.StmtVisitor<V
 
     @Override
     public Void visitClassStmt(Stmt.Class classStmt) {
-        Object superClass = null;
-        if (classStmt.superClass != null) {
-            superClass = evaluate(classStmt.superClass);
-            if (!(superClass instanceof LoxClass)) {
-                Lox.error(classStmt.superClass.name,
-                "Superclass must be a class.");
+        List<LoxClass> superClasses = new ArrayList<>();
+        if (!classStmt.superClasses.isEmpty()) {
+            for (Expr.Variable superClassExpr : classStmt.superClasses) {
+                Object superClass  = evaluate(superClassExpr);
+                if (!(superClass instanceof LoxClass)) {
+                    Lox.error(superClassExpr.name,
+                    "superclass must be a class.");
+                }
+                superClasses.add((LoxClass)superClass);
             }
         }
         env.define(classStmt.name.lexeme, null);
-        if (superClass != null) {
+        if (!superClasses.isEmpty()) {
             this.env = new Environment(this.env);
-            this.env.define("super", superClass);
+            this.env.define("super", superClasses);
         }
         Map<String, LoxFunction> methods = new HashMap<>();
         for (Stmt.FunctionDef method : classStmt.methods) {
@@ -644,8 +647,8 @@ public class Interpreter implements Expr.ExprVisitor<Object>, Stmt.StmtVisitor<V
                                                    );
             methods.put(method.name.lexeme, function);
         }
-        LoxClass klass = new LoxClass(classStmt.name.lexeme, (LoxClass)superClass, methods);
-        if (superClass != null) {
+        LoxClass klass = new LoxClass(classStmt.name.lexeme, superClasses, methods);
+        if (!superClasses.isEmpty()) {
             this.env = this.env.enclosing;
         }
         env.update(classStmt.name, klass);
@@ -749,22 +752,29 @@ public class Interpreter implements Expr.ExprVisitor<Object>, Stmt.StmtVisitor<V
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public Object visitSuperExpr(Expr.Super superExpr) {
         int distance = locals.get(superExpr);
-        LoxClass superClass = (LoxClass)env.getAt(new Token(TokenType.IDENTIFIER, "super", null, 0), distance);
+        List<LoxClass> superClasses = (List<LoxClass>)env.getAt(new Token(TokenType.IDENTIFIER, "super", null, 0), distance);
         LoxInstance instance = (LoxInstance)env.getAt(new Token(TokenType.IDENTIFIER, "this", null, 0), distance - 1);
 
         // TODO: Extend this to support fields and methods
         //      Call get() instead of findMethod - only bind if a LoxFunction
         //      is returned
-        LoxFunction method = superClass.findMethod(superExpr.method.lexeme);
+        if (superClasses.isEmpty()) {
+            throw new RuntimeError(superExpr.keyword, "No superclass available.");
+        }
         
-        if (method == null) {
-            throw new RuntimeError(superExpr.method,
-                                    "Undefined property '" + superExpr.method.lexeme + "'.");
+        for (LoxClass superClass : superClasses) {
+            LoxFunction method = superClass.findMethod(superExpr.method.lexeme);
+            
+            if (method != null) {
+                return method.bind(instance);
+            }
         }
 
-        return method.bind(instance);
+        throw new RuntimeError(superExpr.method,
+                                        "Undefined property '" + superExpr.method.lexeme + "'.");
     }
 
     //==================

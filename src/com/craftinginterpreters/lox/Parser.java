@@ -12,7 +12,7 @@ import static com.craftinginterpreters.lox.TokenType.*;
  * ------------------
  * program      -> declaration* EOF ;
  * declaration  -> funDef | varDecl | classDecl | statement ;
- * classDecl    -> "class" IDENTIFIER ( "extends" IDENTIFIER )? "{" (function | staticMethod | getterMethod)* "}" ;
+ * classDecl    -> "class" IDENTIFIER ( "extends" IDENTIFIER ("," IDENTIFIER)* )? "{" (function | staticMethod | getterMethod)* "}" ;
  * funDef       -> "fun" function ;
  * staticMethod -> "class" function ;
  * getterMethod -> IDENTIFIER blockStmt ;
@@ -126,12 +126,21 @@ public class Parser {
     }
 
     private Stmt classDecl() {
-        // classDecl -> "class" IDENTIFIER ( "extends" IDENTIFIER )? "{" ( function | staticMethod | getterMethod )* "}" ;
+        // classDecl -> "class" IDENTIFIER ( "extends" IDENTIFIER ("," IDENTIFIER)* )? "{" ( function | staticMethod | getterMethod )* "}" ;
         Token name = consume(IDENTIFIER, "Expect a class name.");
-        Expr.Variable superClass = null;
+        List<Expr.Variable> superClasses = new ArrayList<>();
         if (match(EXTENDS)) {
-            consume(IDENTIFIER, "Expect a superclass name.");
-            superClass = new Expr.Variable(previous());
+            Token className = consume(IDENTIFIER, "Expect a superclass name.");
+            superClasses.add(new Expr.Variable(className));
+            if (!check(LEFT_BRACE)) {
+                while (match(COMMA)) {
+                    if (superClasses.size() >= 255) {
+                        error(peek(), "Cannot have greater than 255 parameters super classes");
+                    }
+                    className = consume(IDENTIFIER, "Expect a superclass name."); 
+                    superClasses.add(new Expr.Variable(className));
+                }
+            }
         }
         consume(LEFT_BRACE, "Expected a '{'.");
 
@@ -146,7 +155,7 @@ public class Parser {
         }
 
         consume(RIGHT_BRACE, "Expected a '}'");
-        return new Stmt.Class(name, superClass, methods);
+        return new Stmt.Class(name, superClasses, methods);
     }
 
     private Stmt functionDef(String kind) {
