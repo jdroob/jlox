@@ -715,7 +715,7 @@ public class Interpreter implements Expr.ExprVisitor<Object>, Stmt.StmtVisitor<V
     public Object visitGetExpr(Expr.Get getExpr) {
         Object object = evaluate(getExpr.object);
         if (object instanceof LoxInstance) {
-            Object value = ((LoxInstance)object).get(getExpr.name);
+            Object value = ((LoxInstance)object).get(getExpr.name, false);
             if (value instanceof LoxFunction) {
                 LoxFunction method = (LoxFunction)value;
                 if (method.isGetter) {
@@ -726,7 +726,7 @@ public class Interpreter implements Expr.ExprVisitor<Object>, Stmt.StmtVisitor<V
         }
         
         if (object instanceof LoxClass) {
-            return ((LoxClass)object).get(getExpr.name);
+            return ((LoxClass)object).get(getExpr.name, false);
         }
         
         throw new RuntimeError(getExpr.name,
@@ -766,15 +766,18 @@ public class Interpreter implements Expr.ExprVisitor<Object>, Stmt.StmtVisitor<V
         }
         
         for (LoxClass superClass : superClasses) {
-            LoxFunction method = superClass.findMethod(superExpr.method.lexeme);
+            Object property = superClass.get(superExpr.property, true);
             
-            if (method != null) {
-                return method.bind(instance);
+            if (property != null) {
+                if (property instanceof LoxFunction) {
+                    return ((LoxFunction)property).bind(instance);
+                }
+                return property;
             }
         }
 
-        throw new RuntimeError(superExpr.method,
-                                        "Undefined property '" + superExpr.method.lexeme + "'.");
+        throw new RuntimeError(superExpr.property,
+                                        "Undefined property '" + superExpr.property.lexeme + "'.");
     }
 
     //==================

@@ -15,15 +15,19 @@ public class LoxInstance {
         return "<class instance: @" + Integer.toHexString(System.identityHashCode(this)) + ">";
     }
 
-    public Object get(Token name) {
+    public Object get(Token name, Boolean isSuper) {
         Object field = getField(name);
         if (field != null) return field;
 
-        Object method = getMethod(name);
+        Object method = getMethod(name, isSuper);
         if (method != null) return method;
 
-        throw new RuntimeError(name,
-            "Undefined property " + name.lexeme + ".");
+        if (!isSuper) {
+            throw new RuntimeError(name,
+                "Undefined property " + name.lexeme + ".");
+        }
+
+        return null;
     }
 
     public Object set(Token name, Object rhsVal) {
@@ -67,26 +71,20 @@ public class LoxInstance {
         return null;
     }
 
-    private Object getMethod(Token name) {
-        LoxFunction method = _getMethod(name);
-        // LoxClass superClass = null;
-        // if (!(this instanceof LoxClass)) {
-        //     superClass = klass.superClass;
-        // } else {
-        //     superClass = ((LoxClass)this).superClass;
-        // }
+    private Object getMethod(Token name, Boolean isSuper) {
+        LoxFunction method = _getMethod(name, isSuper);
         if (method != null) return method.bind(this);
 
         return null;
     }
 
-    private LoxFunction _getMethod(Token name) {
+    private LoxFunction _getMethod(Token name, Boolean isSuper) {
         // methods LUT
         LoxFunction method = null;
         if (this instanceof LoxClass) {
             method = ((LoxClass)this).findMethod(name.lexeme);
             if (method != null) {
-                if (method.isStatic) return method;
+                if (method.isStatic || isSuper) return method;
                 throw new RuntimeError(name, 
                             "class object cannot access non-static method.");
             }

@@ -664,8 +664,8 @@ public class Parser {
         if (match(SUPER)) {
             Token keyword = previous();
             consume(DOT, "Expected a '.' after super keyword.");
-            Token method = consume(IDENTIFIER, "Expected an identifier.");
-            return new Expr.Super(keyword, method);
+            Token property = consume(IDENTIFIER, "Expected an identifier.");
+            return new Expr.Super(keyword, property);
         }
 
         if (match(LEFT_PAREN)) {
