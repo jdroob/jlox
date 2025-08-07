@@ -70,10 +70,14 @@ public class LoxList {
         String repr = "[ ";
         int i = 0;
         for (Object value : list) {
+            String valueStr = value.toString();
+            if (value instanceof String) {
+                valueStr = "'" + valueStr + "'";
+            }
             if (i == list.size() - 1) {
-                repr += value.toString() + " ]";
+                repr += valueStr + " ]";
             } else {
-                repr += value.toString() + ", ";
+                repr += valueStr + ", ";
                 i += 1;
             }
         }
