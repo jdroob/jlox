@@ -235,6 +235,15 @@ public class Resolver implements Expr.ExprVisitor<Void>, Stmt.StmtVisitor<Void> 
     }
 
     @Override
+    public Void visitListExprExpr(Expr.ListExpr listExpr) {
+        for (Expr expr : listExpr.exprs) {
+            resolve(expr);
+        }
+
+        return null;
+    }
+
+    @Override
     public Void visitCallExpr(Expr.Call expr) {
         resolve(expr.callee);
         for (Expr arg : expr.args) {

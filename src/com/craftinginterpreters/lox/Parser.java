@@ -52,7 +52,8 @@ import static com.craftinginterpreters.lox.TokenType.*;
  * call         -> primary ( "(" arguments? ")" | IDENTIFIER "." )* ;
  * arguments    -> expression ( "," expression )* ;
  * primary      -> NUMBER | STRING | "true" | "false" | "nil" | "this" | "(" expression ")" | IDENTIFIER | 
- *                 anonymous | error ;
+ *                 anonymous | list | error ;
+ * list         -> "[" ( expression ( "," expression )*)? "]";
  * anonymous    -> "fun (" parameters? ")" blockStmt ;G
  * error        -> ( ("==" | "!=" | ">" | "<" | ">=" | "<=" | "+" | "-" | "*" | "/") expression ) ;
  */
@@ -674,7 +675,28 @@ public class Parser {
             return new Expr.Grouping(expr);
         }
 
+        if (match(LEFT_BRACK)) {
+            return list();
+        }
+
         return error();
+    }
+
+    private Expr list() {
+        // list -> "[" ( expression ( "," expression )*)? "]";
+        List<Expr> listExpr = new ArrayList<>();
+        Expr element = null;
+        do {
+            if (listExpr.size() >= Integer.MAX_VALUE) {
+                error(peek(), "List is way to big...\nIOW, you exceeded the size limit buddy");
+            }
+            if (check(RIGHT_BRACK)) break;
+            element = assign(); // HACK - avoid comma ambiguity
+            listExpr.add(element);
+        } while (match(COMMA));
+        consume(RIGHT_BRACK, "Expected a ']'.");
+
+        return new Expr.ListExpr(listExpr);
     }
 
     private Expr anonymousFun() {

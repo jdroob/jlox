@@ -4,6 +4,8 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.lang.reflect.Method;
+import java.lang.reflect.InvocationTargetException;
 
 public class Interpreter implements Expr.ExprVisitor<Object>, Stmt.StmtVisitor<Void> {
     final Environment globals = new Environment();  // always refers to inner-most scope
@@ -418,6 +420,9 @@ public class Interpreter implements Expr.ExprVisitor<Object>, Stmt.StmtVisitor<V
                 if (left instanceof String && right instanceof String) {
                     return (String)left + (String)right;
                 }
+                if (left instanceof LoxList && right instanceof LoxList) {
+                    return ((LoxList)left).add((LoxList)right);
+                }
                 if (left instanceof String && right instanceof Double) {
                     String sright = canonicalizeNum(right.toString());
                     return (String)left + sright;
@@ -661,24 +666,42 @@ public class Interpreter implements Expr.ExprVisitor<Object>, Stmt.StmtVisitor<V
         Object idxExpr = evaluate(idx.idxExpr);
         Object idxExpr2 = idx.idxExpr2 != null ? evaluate(idx.idxExpr2) : null;
 
-        if (object instanceof String) {
-            String str = (String)object;
-            int start = toIntIndex(idxExpr, idx.lbrack, str.length());
-            int end = idxExpr2 != null ? toIntIndex(idxExpr2, idx.lbrack, str.length()) : -1;
+        try {
+            if (object instanceof String) {
+                String str = (String)object;
+                int start = toIntIndex(idxExpr, idx.lbrack, str.length());
+                int end = idxExpr2 != null ? toIntIndex(idxExpr2, idx.lbrack, str.length()) : -1;
 
-            if (end != -1) {
-                if (start > end) {
-                    throw new RuntimeError(idx.lbrack, "Start index cannot be greater than end index.");
+                if (end != -1) {
+                    if (start > end) {
+                        throw new RuntimeError(idx.lbrack, "Start index cannot be greater than end index.");
+                    }
+                    return str.substring(start, end);
+                } else {
+                    return Character.toString(str.charAt(start));
                 }
-                return str.substring(start, end);
-            } else {
-                return Character.toString(str.charAt(start));
             }
+
+            if (object instanceof LoxList) {
+                LoxList list = (LoxList)object;
+                int start = toIntIndex(idxExpr, idx.lbrack, list.size());
+                int end = idxExpr2 != null ? toIntIndex(idxExpr2, idx.lbrack, list.size()) : -1;
+
+                if (end != -1) {
+                    if (start > end) {
+                        throw new RuntimeError(idx.lbrack, "Start index cannot be greater than end index.");
+                    }
+                    return list.subList(start, end);
+                } else {
+                    return list.getAt(start);
+                }
+            }
+        } catch (IndexOutOfBoundsException e) {
+            throw new RuntimeError(idx.lbrack,
+                                    "Index out of bounds!");
         }
 
-        // TODO: Add support for arrays when those are impl'd in Lox
-
-        throw new RuntimeError(idx.lbrack, "Can only index strings (and arrays in the future).");
+        throw new RuntimeError(idx.lbrack, "Can only index lists or strings.");
     }
 
     @Override
@@ -727,6 +750,67 @@ public class Interpreter implements Expr.ExprVisitor<Object>, Stmt.StmtVisitor<V
         
         if (object instanceof LoxClass) {
             return ((LoxClass)object).get(getExpr.name, false);
+        }
+
+        if (object instanceof LoxList) {
+            try {
+                final LoxList list = (LoxList)object;
+                final String methodName = getExpr.name.lexeme;
+                Class<?> listClass = list.getClass();
+                
+                // Find the method but don't invoke it yet
+                Method tmp = null;
+                switch (methodName) {
+                    case "append":
+                    case "prepend":
+                        tmp = listClass.getMethod(methodName, Object.class);
+                        break;
+                    case "popFront":
+                    case "popBack":
+                    case "clear":
+                    case "isEmpty":
+                    // case "toString":
+                        tmp = listClass.getMethod(methodName);
+                        break;
+                    case "add":
+                        tmp = listClass.getMethod(methodName, LoxList.class);
+                        break;
+                    default:
+                        throw new RuntimeError(getExpr.name, 
+                            "No such method '" + getExpr.name.lexeme + "' on list.");
+                }
+                final Method method = tmp;
+
+                // Return a LoxCallable that will invoke the method when called
+                return new LoxCallable() {
+                    @Override
+                    public int arity() {
+                        return method.getParameterCount();
+                    }
+
+                    @Override
+                    public Object call(Interpreter interpreter, List<Object> arguments) {
+                        try {
+                            if (arguments.isEmpty()) {
+                                return method.invoke(list);
+                            } else {
+                                return method.invoke(list, arguments.toArray());
+                            }
+                        } catch (IllegalAccessException | InvocationTargetException e) {
+                            throw new RuntimeError(getExpr.name,
+                                "Error invoking method '" + methodName + "': " + e.getMessage());
+                        }
+                    }
+
+                    @Override
+                    public String toString() {
+                        return "<list method: " + methodName + ">";
+                    }
+                };
+            } catch (NoSuchMethodException e) {
+                throw new RuntimeError(getExpr.name, 
+                    "No such method '" + getExpr.name.lexeme + "' on list.");
+            }
         }
         
         throw new RuntimeError(getExpr.name,
@@ -780,6 +864,17 @@ public class Interpreter implements Expr.ExprVisitor<Object>, Stmt.StmtVisitor<V
                                         "Undefined property '" + superExpr.property.lexeme + "'.");
     }
 
+    @Override
+    public Object visitListExprExpr(Expr.ListExpr listExpr) {
+        List<Object> loxList = new ArrayList<>();
+
+        for (Expr expr : listExpr.exprs) {
+            loxList.add(evaluate(expr));
+        }
+
+        return new LoxList(loxList);
+    }
+
     //==================
     // Helper methods
     //==================
@@ -817,6 +912,7 @@ public class Interpreter implements Expr.ExprVisitor<Object>, Stmt.StmtVisitor<V
         if (object instanceof Boolean) return (boolean)object;
         if (object instanceof Double) return (double)object != 0;
         if (object instanceof String) return !((String)object).isEmpty();
+        if (object instanceof LoxList) return !((LoxList)object).isEmpty();
 
         return true;
     }
@@ -828,12 +924,14 @@ public class Interpreter implements Expr.ExprVisitor<Object>, Stmt.StmtVisitor<V
                object instanceof LoxFunction  ||
                object instanceof LoxClass     ||
                object instanceof LoxInstance  ||
+               object instanceof LoxList ||
                object == null;
     }
     
     private boolean isEqual(Object left, Object right) {
         if (left instanceof LoxFunction ||
             left instanceof LoxInstance ||
+            left instanceof LoxList     ||
             left instanceof LoxClass) {
                 left = System.identityHashCode(left);
                 right = System.identityHashCode(right);
@@ -859,6 +957,7 @@ public class Interpreter implements Expr.ExprVisitor<Object>, Stmt.StmtVisitor<V
             (left == null && isTruthy(right))                             ||
             (left instanceof LoxInstance && right instanceof LoxInstance) ||
             (left instanceof LoxFunction && right instanceof LoxFunction) ||
+            (left instanceof LoxList && right instanceof LoxList) ||
             (left instanceof LoxClass && right instanceof LoxClass))
             return;
 

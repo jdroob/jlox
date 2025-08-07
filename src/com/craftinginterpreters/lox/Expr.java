@@ -20,6 +20,7 @@ abstract class Expr {
 		R visitSetExpr(Expr.Set set);
 		R visitThisExpr(Expr.This thisExpr);
 		R visitSuperExpr(Expr.Super superExpr);
+		R visitListExprExpr(Expr.ListExpr listexpr);
 	}
 	abstract <R> R accept(ExprVisitor<R> visitor);
 	static class Binary extends Expr {
@@ -251,5 +252,17 @@ abstract class Expr {
 
 		final Token keyword;
 		final Token property;
+	}
+	static class ListExpr extends Expr {
+		ListExpr(List<Expr> exprs) {
+			this.exprs = exprs;
+		}
+
+		@Override
+		public <R> R accept(ExprVisitor<R> visitor) {
+			return visitor.visitListExprExpr(this);
+		}
+
+		final List<Expr> exprs;
 	}
 }
