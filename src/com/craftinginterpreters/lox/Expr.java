@@ -1,6 +1,7 @@
 package com.craftinginterpreters.lox;
 
 import java.util.List;
+import java.util.Map;
 
 abstract class Expr {
 	interface ExprVisitor<R> {
@@ -21,6 +22,7 @@ abstract class Expr {
 		R visitThisExpr(Expr.This thisExpr);
 		R visitSuperExpr(Expr.Super superExpr);
 		R visitListExprExpr(Expr.ListExpr listexpr);
+		R visitMapExprExpr(Expr.MapExpr mapexpr);
 	}
 	abstract <R> R accept(ExprVisitor<R> visitor);
 	static class Binary extends Expr {
@@ -264,5 +266,17 @@ abstract class Expr {
 		}
 
 		final List<Expr> exprs;
+	}
+	static class MapExpr extends Expr {
+		MapExpr(List<Map<Expr,Expr>> KeyValuePairs) {
+			this.KeyValuePairs = KeyValuePairs;
+		}
+
+		@Override
+		public <R> R accept(ExprVisitor<R> visitor) {
+			return visitor.visitMapExprExpr(this);
+		}
+
+		final List<Map<Expr,Expr>> KeyValuePairs;
 	}
 }

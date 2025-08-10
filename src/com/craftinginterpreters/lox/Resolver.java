@@ -243,6 +243,21 @@ public class Resolver implements Expr.ExprVisitor<Void>, Stmt.StmtVisitor<Void> 
         return null;
     }
 
+
+    @Override
+    public Void visitMapExprExpr(Expr.MapExpr mapExpr) {
+        for (Map<Expr, Expr> map : mapExpr.KeyValuePairs) {
+            for (Map.Entry<Expr, Expr> entry : map.entrySet()) {
+                Expr key = entry.getKey();
+                Expr value = entry.getValue();
+                resolve(key);
+                resolve(value);
+            }
+        }
+        
+        return null;
+    }
+
     @Override
     public Void visitCallExpr(Expr.Call expr) {
         resolve(expr.callee);

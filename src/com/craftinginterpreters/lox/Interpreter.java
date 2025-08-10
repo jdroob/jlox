@@ -696,9 +696,18 @@ public class Interpreter implements Expr.ExprVisitor<Object>, Stmt.StmtVisitor<V
                     return list.getAt(start);
                 }
             }
+
+            if (object instanceof LoxMap) {
+                LoxMap map = (LoxMap)object;
+                return map.get(idxExpr);
+            }
+
         } catch (IndexOutOfBoundsException e) {
             throw new RuntimeError(idx.lbrack,
                                     "Index out of bounds!");
+        } catch (RuntimeException e) {
+            throw new RuntimeError(idx.lbrack,
+                                    "Error occurred while performing index operation.");
         }
 
         throw new RuntimeError(idx.lbrack, "Can only index lists or strings.");
@@ -812,6 +821,67 @@ public class Interpreter implements Expr.ExprVisitor<Object>, Stmt.StmtVisitor<V
                     "No such method '" + getExpr.name.lexeme + "' on list.");
             }
         }
+
+        if (object instanceof LoxMap) {
+            try {
+                final LoxMap map = (LoxMap)object;
+                final String methodName = getExpr.name.lexeme;
+                Class<?> mapClass = map.getClass();
+                
+                // Find the method but don't invoke it yet
+                Method tmp = null;
+                switch (methodName) {
+                    case "put":
+                        tmp = mapClass.getMethod(methodName, Object.class, Object.class);
+                        break;
+                    case "containsKey":
+                    case "containsValue":
+                    case "remove":
+                    case "get":
+                        tmp = mapClass.getMethod(methodName, Object.class);
+                        break;
+                    case "clear":
+                    case "isEmpty":
+                    case "size":
+                        tmp = mapClass.getMethod(methodName);
+                        break;
+                    default:
+                        throw new RuntimeError(getExpr.name, 
+                            "No such method '" + getExpr.name.lexeme + "' on list.");
+                }
+                final Method method = tmp;
+
+                // Return a LoxCallable that will invoke the method when called
+                return new LoxCallable() {
+                    @Override
+                    public int arity() {
+                        return method.getParameterCount();
+                    }
+
+                    @Override
+                    public Object call(Interpreter interpreter, List<Object> arguments) {
+                        try {
+                            if (arguments.isEmpty()) {
+                                return method.invoke(map);
+                            } else {
+                                return method.invoke(map, arguments.toArray());
+                            }
+                        } catch (IllegalAccessException | InvocationTargetException e) {
+                            throw new RuntimeError(getExpr.name,
+                                "Error invoking method '" + methodName + "': " + e.getMessage());
+                        }
+                    }
+
+                    @Override
+                    public String toString() {
+                        return "<list method: " + methodName + ">";
+                    }
+                };
+            } catch (NoSuchMethodException e) {
+                throw new RuntimeError(getExpr.name, 
+                    "No such method '" + getExpr.name.lexeme + "' on list.");
+            }
+        }
         
         throw new RuntimeError(getExpr.name,
             "Only instances have properties.");
@@ -873,6 +943,23 @@ public class Interpreter implements Expr.ExprVisitor<Object>, Stmt.StmtVisitor<V
         }
 
         return new LoxList(loxList);
+    }
+
+    @Override
+    public Object visitMapExprExpr(Expr.MapExpr mapExpr) {
+        Map<Object, Object> loxMap = new HashMap<>();
+
+        for (Map<Expr, Expr> map : mapExpr.KeyValuePairs) {
+            for (Map.Entry<Expr, Expr> entry : map.entrySet()) {
+                Expr key = entry.getKey();
+                Expr val = entry.getValue();
+                Object evaluatedKey = evaluate(key);
+                Object evaluatedValue = evaluate(val);
+                loxMap.put(evaluatedKey, evaluatedValue);
+            }
+        }
+
+        return new LoxMap(loxMap);
     }
 
     //==================

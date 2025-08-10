@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Arrays;
 import java.util.List;
+import java.util.ArrayList;
 
 public class GenerateAst {
     public static void main(String[] args) throws IOException {
@@ -29,7 +30,8 @@ public class GenerateAst {
             "Set : Expr object, Token name, Expr rhs",
             "This: Token keyword",
             "Super: Token keyword, Token property",
-            "ListExpr: List<Expr> exprs"
+            "ListExpr: List<Expr> exprs",
+            "MapExpr: List<Map<Expr,Expr>> KeyValuePairs"
         ));
         defineAst(outputDir, "Stmt", Arrays.asList(
             "Expression : Expr expression",
@@ -54,6 +56,7 @@ public class GenerateAst {
         writer.println("package com.craftinginterpreters.lox;");
         writer.println();
         writer.println("import java.util.List;");
+        writer.println("import java.util.Map;");
         writer.println();
         writer.println("abstract class " + baseName + " {");
         defineVisitor(writer, baseName, types);
@@ -81,9 +84,37 @@ public class GenerateAst {
         // Store params in fields
         String[] fields = new String[0];
         if (!fieldList.equals("")) {
-            fields = fieldList.split(",");
+            // Don't just split on commas - we need to handle generic types
+            List<String> fieldsList = new ArrayList<>();
+            int bracketDepth = 0;
+            StringBuilder currentField = new StringBuilder();
+            
+            for (int i = 0; i < fieldList.length(); i++) {
+                char c = fieldList.charAt(i);
+                
+                if (c == '<') bracketDepth++;
+                else if (c == '>') bracketDepth--;
+                
+                // Only split on commas when not inside angle brackets
+                if (c == ',' && bracketDepth == 0) {
+                    fieldsList.add(currentField.toString().trim());
+                    currentField = new StringBuilder();
+                } else {
+                    currentField.append(c);
+                }
+            }
+            
+            // Add the last field
+            if (currentField.length() > 0) {
+                fieldsList.add(currentField.toString().trim());
+            }
+            
+            fields = fieldsList.toArray(new String[0]);
+            
             for (String field : fields) {
-                String name = field.trim().split(" ")[1];
+                String trimmedField = field.trim();
+                // Extract the parameter name (last word in the field)
+                String name = trimmedField.substring(trimmedField.lastIndexOf(' ') + 1);
                 writer.println("\t\t\tthis." + name + " = " + name + ";");
             }
         }

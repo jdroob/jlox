@@ -91,6 +91,11 @@ public class RpnPrinter implements Expr.ExprVisitor<String> {
         return reversePolishify("list", listExpr);
     }
 
+    @Override
+    public String visitMapExprExpr(Expr.MapExpr mapExpr) {
+        return reversePolishify("map", mapExpr);
+    }
+
     private String reversePolishify(String name, Expr... exprs) {
         StringBuilder builder = new StringBuilder();
         for (Expr expr : exprs) {

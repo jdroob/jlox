@@ -2,7 +2,8 @@ package com.craftinginterpreters.lox;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Arrays;
+import java.util.Map;
+import java.util.HashMap;
 
 import com.craftinginterpreters.lox.Stmt.Block;
 import static com.craftinginterpreters.lox.TokenType.*;
@@ -22,7 +23,7 @@ import static com.craftinginterpreters.lox.TokenType.*;
  * statement    -> printStmt | branchStmt | iterStmt | exprStmt | breakStmt | blockStmt | returnStmt ;
  * printStmt    -> "print" expression ";" ;
  * branchStmt   -> ifStmt | ifElseStmt ;
- * blockStmt    -> "{" declaration* "}" ;
+ * blockStmt    -> "{" declaration* "}" ;  // In statement context, '{' starts a block
  * iterStmt     -> whileStmt | forStmt ;
  * whileStmt    -> "while" "(" expression ")" statement ;
  * forStmt      -> "for" "(" (varStmt | exprStmt)? ";" expression? ";" expression? ")" statement ;
@@ -52,9 +53,11 @@ import static com.craftinginterpreters.lox.TokenType.*;
  * call         -> primary ( "(" arguments? ")" | IDENTIFIER "." )* ;
  * arguments    -> expression ( "," expression )* ;
  * primary      -> NUMBER | STRING | "true" | "false" | "nil" | "this" | "(" expression ")" | IDENTIFIER | 
- *                 anonymous | list | error ;
+ *                 anonymous | list | map | error ;
  * list         -> "[" ( expression ( "," expression )*)? "]";
- * anonymous    -> "fun (" parameters? ")" blockStmt ;G
+ * map          -> "{" hashable ":" expression ("," hashable ":" expression)* "}" ;  // Requires at least one key-value pair
+ * hashable     -> NUMBER | STRING | "true" | "false" | "nil" | IDENTIFIER | "(" expression ")" ;
+ * anonymous    -> "fun (" parameters? ")" blockStmt ;
  * error        -> ( ("==" | "!=" | ">" | "<" | ">=" | "<=" | "+" | "-" | "*" | "/") expression ) ;
  */
 
@@ -654,7 +657,16 @@ public class Parser {
     }
 
     private Expr primary() {
-        // primary -> NUMBER | STRING | "true" | "false" | "nil" | "this" | "super" "." IDENTIFIER | "(" expression ")" | IDENTIFIER | error ;
+        // primary -> NUMBER                 | 
+        //            STRING                 | 
+        //            "true"                 | 
+        //            "false"                | 
+        //            "nil"                  | 
+        //            "this"                 | 
+        //            "super" "." IDENTIFIER | 
+        //            "(" expression ")"     | 
+        //            IDENTIFIER             | 
+        //            error ;
         if (match(FALSE)) return new Expr.Literal(false);
         if (match(TRUE)) return new Expr.Literal(true);
         if (match(NIL)) return new Expr.Literal(null);
@@ -679,6 +691,10 @@ public class Parser {
             return list();
         }
 
+        if (match(LEFT_BRACE)) {
+            return map();
+        }
+
         return error();
     }
 
@@ -697,6 +713,55 @@ public class Parser {
         consume(RIGHT_BRACK, "Expected a ']'.");
 
         return new Expr.ListExpr(listExpr);
+    }
+
+
+    // TODO: Decide if you should keep this
+    private Expr mapOrError() {
+        // We've already consumed the LEFT_BRACE
+        // Look ahead to see if this looks like a map or if it's an error
+        
+        // Empty braces = empty map
+        if (check(RIGHT_BRACE)) {
+            advance(); // consume RIGHT_BRACE
+            return new Expr.MapExpr(new ArrayList<>());
+        }
+        
+        // Try to parse as map: look for "key : value" pattern
+        int savedCurr = curr;
+        try {
+            // Try to parse the first token(s) as a potential key
+            Expr key = assign(); // Use assign() to avoid comma ambiguity
+            if (match(COLON)) {
+                // This looks like a map, rewind and parse properly
+                curr = savedCurr;
+                return map();
+            }
+        } catch (ParseError e) {
+            // Parsing failed, this is definitely not a map
+        }
+        
+        // Rewind and throw error - LEFT_BRACE in expression context without map syntax
+        curr = savedCurr;
+        throw error(previous(), "Unexpected '{' in expression context. Use '{key: value}' for maps.");
+    }
+
+    private Expr map() {
+        // map          -> "{" ( hashable ":" expression )* "}" ;
+        // hashable     -> NUMBER | STRING | "true" | "false" | "nil" | IDENTIFIER | "(" expression ")" ;
+        List<Map<Expr, Expr>> KeyValuePairs = new ArrayList<>();
+        while (!check(RIGHT_BRACE)) {
+            Expr key = assign(); // Use assign() to avoid comma ambiguity
+            consume(COLON, "Expected a ':'.");
+            Expr val = assign(); // Use assign() to avoid comma ambiguity
+            Map<Expr, Expr> pair = new HashMap<>();
+            pair.put(key, val);
+            KeyValuePairs.add(pair);
+            if (check(RIGHT_BRACE)) break;
+            consume(COMMA, "Expected a ','.");
+        }
+        consume(RIGHT_BRACE, "Expected a '}'");
+        return new Expr.MapExpr(KeyValuePairs);
     }
 
     private Expr anonymousFun() {

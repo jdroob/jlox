@@ -92,6 +92,11 @@ public class TreePrinter implements Expr.ExprVisitor<String> {
         return format("list", listExpr);
     }
 
+    @Override
+    public String visitMapExprExpr(Expr.MapExpr mapExpr) {
+        return format("map", mapExpr);
+    }
+
     private String format(String name, Expr... exprs) {
         StringBuilder builder = new StringBuilder();
         builder.append(name).append("\n");

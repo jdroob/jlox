@@ -1,0 +1,20 @@
+// Test map expressions vs block statements
+
+// Map expressions (in expression contexts)
+var emptyMap = {};
+var singleMap = {"key": "value"};
+var multiMap = {"a": 1, "b": 2, "c": 3};
+
+// Block statements (in statement contexts)
+{
+    print "This is a block statement";
+    var x = 10;
+}
+
+// Function with block body
+fun test() {
+    print "Function body block";
+    return 42;
+}
+
+print "Map disambiguation test completed";

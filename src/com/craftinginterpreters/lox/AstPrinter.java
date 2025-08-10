@@ -91,6 +91,11 @@ public class AstPrinter implements Expr.ExprVisitor<String> {
         return parenthesize("list", listExpr);
     }
 
+    @Override
+    public String visitMapExprExpr(Expr.MapExpr mapExpr) {
+        return parenthesize("map", mapExpr);
+    }
+
     private String parenthesize(String name, Expr... exprs) {
         StringBuilder builder = new StringBuilder();
         builder.append(("(")).append(name);
