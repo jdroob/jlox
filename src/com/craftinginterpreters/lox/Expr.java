@@ -13,6 +13,9 @@ abstract class Expr {
 		R visitVariableExpr(Expr.Variable variable);
 		R visitAssignExpr(Expr.Assign assign);
 		R visitIndexExpr(Expr.Index index);
+		R visitIndexPrefixExpr(Expr.IndexPrefix indexprefix);
+		R visitIndexPostfixExpr(Expr.IndexPostfix indexpostfix);
+		R visitIndexAssignExpr(Expr.IndexAssign indexassign);
 		R visitPrefixExpr(Expr.Prefix prefix);
 		R visitPostfixExpr(Expr.Postfix postfix);
 		R visitCallExpr(Expr.Call call);
@@ -140,6 +143,56 @@ abstract class Expr {
 		final Expr object;
 		final Expr idxExpr;
 		final Expr idxExpr2;
+	}
+	static class IndexPrefix extends Expr {
+		IndexPrefix(Token operator, Expr object, Expr idxExpr) {
+			this.operator = operator;
+			this.object = object;
+			this.idxExpr = idxExpr;
+		}
+
+		@Override
+		public <R> R accept(ExprVisitor<R> visitor) {
+			return visitor.visitIndexPrefixExpr(this);
+		}
+
+		final Token operator;
+		final Expr object;
+		final Expr idxExpr;
+	}
+	static class IndexPostfix extends Expr {
+		IndexPostfix(Token operator, Expr object, Expr idxExpr) {
+			this.operator = operator;
+			this.object = object;
+			this.idxExpr = idxExpr;
+		}
+
+		@Override
+		public <R> R accept(ExprVisitor<R> visitor) {
+			return visitor.visitIndexPostfixExpr(this);
+		}
+
+		final Token operator;
+		final Expr object;
+		final Expr idxExpr;
+	}
+	static class IndexAssign extends Expr {
+		IndexAssign(Token lbrack, Expr object, Expr idxExpr, Expr rhs) {
+			this.lbrack = lbrack;
+			this.object = object;
+			this.idxExpr = idxExpr;
+			this.rhs = rhs;
+		}
+
+		@Override
+		public <R> R accept(ExprVisitor<R> visitor) {
+			return visitor.visitIndexAssignExpr(this);
+		}
+
+		final Token lbrack;
+		final Expr object;
+		final Expr idxExpr;
+		final Expr rhs;
 	}
 	static class Prefix extends Expr {
 		Prefix(Token operator, Token name) {

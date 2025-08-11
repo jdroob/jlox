@@ -14,8 +14,9 @@ public class LoxMap {
         this.map = new HashMap<>(map);
     }
 
-    public void put(Object key, Object value) {
+    public Object put(Object key, Object value) {
         map.put(key, value);
+        return value;
     }
 
     public void remove(Object key) {
@@ -57,6 +58,12 @@ public class LoxMap {
             String valueStr = value.toString();
             if (key instanceof String) {
                 keyStr = "'" + keyStr + "'";
+            }
+            if (key instanceof Double) {
+                keyStr = Interpreter.canonicalizeNum(keyStr);
+            }
+            if (value instanceof Double) {
+                valueStr = Interpreter.canonicalizeNum(valueStr);
             }
             if (value instanceof String) {
                 valueStr = "'" + valueStr + "'";

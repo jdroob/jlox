@@ -46,6 +46,22 @@ public class RpnPrinter implements Expr.ExprVisitor<String> {
         return reversePolishify(idx.object.toString(), idx.idxExpr);
     }
 
+    
+    @Override
+    public String visitIndexPostfixExpr(Expr.IndexPostfix idx) {
+        return reversePolishify(idx.object.toString(), idx.idxExpr);
+    }
+
+    @Override
+    public String visitIndexPrefixExpr(Expr.IndexPrefix idx) {
+        return reversePolishify(idx.object.toString(), idx.idxExpr);
+    }
+
+    @Override
+    public String visitIndexAssignExpr(Expr.IndexAssign obj) {
+        return reversePolishify(obj.object.toString(), obj.idxExpr);
+    }
+
     @Override
     public String visitPostfixExpr(Expr.Postfix postfix) {
         return reversePolishify(postfix.name.lexeme, postfix);

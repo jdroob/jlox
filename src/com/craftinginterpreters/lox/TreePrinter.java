@@ -48,6 +48,21 @@ public class TreePrinter implements Expr.ExprVisitor<String> {
     }
 
     @Override
+    public String visitIndexPostfixExpr(Expr.IndexPostfix idx) {
+        return format(idx.object.toString(), idx.idxExpr);
+    }
+
+    @Override
+    public String visitIndexPrefixExpr(Expr.IndexPrefix idx) {
+        return format(idx.object.toString(), idx.idxExpr);
+    }
+
+    @Override
+    public String visitIndexAssignExpr(Expr.IndexAssign obj) {
+        return format(obj.object.toString(), obj.idxExpr);
+    }
+
+    @Override
     public String visitPostfixExpr(Expr.Postfix postfix) {
         return format(postfix.name.lexeme, postfix);
     }

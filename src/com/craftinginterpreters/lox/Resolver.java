@@ -341,6 +341,31 @@ public class Resolver implements Expr.ExprVisitor<Void>, Stmt.StmtVisitor<Void> 
     }
 
     @Override
+    public Void visitIndexPrefixExpr(Expr.IndexPrefix expr) {
+        resolve(expr.object);
+        resolve(expr.idxExpr);
+
+        return null;
+    }
+
+    @Override
+    public Void visitIndexPostfixExpr(Expr.IndexPostfix expr) {
+        resolve(expr.object);
+        resolve(expr.idxExpr);
+
+        return null;
+    }
+
+    @Override
+    public Void visitIndexAssignExpr(Expr.IndexAssign expr) {
+        resolve(expr.object);
+        resolve(expr.idxExpr);
+        resolve(expr.rhs);
+
+        return null;
+    }
+
+    @Override
     public Void visitPostfixExpr(Expr.Postfix expr) {
         resolveLocal(expr, expr.name);
         markUsed(expr.name);

@@ -58,6 +58,11 @@ public class LoxList {
         return list.get(idx);
     }
 
+    public Object set(int idx, Object rhsVal) {
+        list.set(idx, rhsVal);
+        return rhsVal;
+    }
+
     public LoxList add(LoxList rhs) {
         List<Object> newList = new ArrayList<>();
         newList.addAll(this.list);
@@ -73,6 +78,9 @@ public class LoxList {
             String valueStr = value.toString();
             if (value instanceof String) {
                 valueStr = "'" + valueStr + "'";
+            }
+            if (value instanceof Double) {
+                valueStr = Interpreter.canonicalizeNum(valueStr);
             }
             if (i == list.size() - 1) {
                 repr += valueStr + " ]";

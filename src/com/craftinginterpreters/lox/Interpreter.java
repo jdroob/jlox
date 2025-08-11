@@ -410,6 +410,7 @@ public class Interpreter implements Expr.ExprVisitor<Object>, Stmt.StmtVisitor<V
         // Declare here so short-cirtuiting works correctly
         Object left = evaluate(expr.left);
         Object right = evaluate(expr.right);
+        double leftVal, rightVal;
 
         switch (expr.operator.type) {
             // Arithmetic
@@ -452,20 +453,31 @@ public class Interpreter implements Expr.ExprVisitor<Object>, Stmt.StmtVisitor<V
                     " operator only supports number and/or string types.");
             case MINUS: 
                 checkNumberOperands(expr.operator, left, right);
-                return (double)left - (double)right;
+                leftVal = convertToLoxNum(left);
+                rightVal = convertToLoxNum(right);
+                return leftVal - rightVal;
             case STAR: 
                 checkNumberOperands(expr.operator, left, right);
-                return (double)left * (double)right;
+                leftVal = convertToLoxNum(left);
+                rightVal = convertToLoxNum(right);
+                return leftVal * rightVal;
             case STAR_STAR: 
                 checkNumberOperands(expr.operator, left, right);
-                return Math.pow((double)left, (double)right);
+                leftVal = convertToLoxNum(left);
+                rightVal = convertToLoxNum(right);
+                return Math.pow(leftVal, rightVal);
             case SLASH: 
                 checkNumberOperands(expr.operator, left, right);
                 checkDivisor(expr.operator, right);
-                return (double)left / (double)right;
+                leftVal = convertToLoxNum(left);
+                rightVal = convertToLoxNum(right);
+                return leftVal / rightVal;
             case MODULO: 
                 checkNumberOperands(expr.operator, left, right);
-                return (double)left % (double)right;
+                checkDivisor(expr.operator, right);
+                leftVal = convertToLoxNum(left);
+                rightVal = convertToLoxNum(right);
+                return leftVal % rightVal;
 
             // Bitwise
             case BITSHIFT_LEFT:
@@ -491,16 +503,24 @@ public class Interpreter implements Expr.ExprVisitor<Object>, Stmt.StmtVisitor<V
                 return !isEqual(left, right);
             case GREATER: 
                 checkNumberOperands(expr.operator, left, right);
-                return (double)left > (double)right;
+                leftVal = convertToLoxNum(left);
+                rightVal = convertToLoxNum(right);
+                return leftVal > rightVal;
             case LESS: 
                 checkNumberOperands(expr.operator, left, right);
-                return (double)left < (double)right;
+                leftVal = convertToLoxNum(left);
+                rightVal = convertToLoxNum(right);
+                return leftVal < rightVal;
             case GREATER_EQUAL: 
                 checkNumberOperands(expr.operator, left, right);
-                return (double)left >= (double)right;
+                leftVal = convertToLoxNum(left);
+                rightVal = convertToLoxNum(right);
+                return leftVal >= rightVal;
             case LESS_EQUAL: 
                 checkNumberOperands(expr.operator, left, right);
-                return (double)left <= (double)right;
+                leftVal = convertToLoxNum(left);
+                rightVal = convertToLoxNum(right);
+                return leftVal <= rightVal;
 
             // Comma
             case COMMA: return right;
@@ -714,6 +734,146 @@ public class Interpreter implements Expr.ExprVisitor<Object>, Stmt.StmtVisitor<V
     }
 
     @Override
+    public Object visitIndexPrefixExpr(Expr.IndexPrefix obj) {
+        Object object = evaluate(obj.object);
+        Object idxExpr = evaluate(obj.idxExpr);
+
+        try {
+            if (object instanceof LoxList) {
+                LoxList list = (LoxList)object;
+                int idx = toIntIndex(idxExpr, obj.operator, list.size());
+                Object val = list.getAt(idx);
+                if (val instanceof Integer) {
+                    Integer ival = (Integer)val;
+                    if (obj.operator.type == TokenType.PLUS_PLUS) {
+                        ival++;
+                    } else {
+                        ival--;
+                    }
+                    list.set(idx, ival);
+                    return ival;
+                }
+                if (val instanceof Double) {
+                    Double dval = (Double)val;
+                    if (obj.operator.type == TokenType.PLUS_PLUS) {
+                        dval = dval + 1;
+                    } else {
+                        dval = dval - 1;
+                    }
+                    list.set(idx, dval);
+                    return dval;
+                }
+            }
+
+            if (object instanceof LoxMap) {
+                LoxMap map = (LoxMap)object;
+                Object val = map.get(idxExpr);
+                if (val instanceof Integer) {
+                    Integer ival = (Integer)val;
+                    if (obj.operator.type == TokenType.PLUS_PLUS) {
+                        ival++;
+                    } else {
+                        ival--;
+                    }
+                    map.put(idxExpr, ival);
+                    return ival;
+                }
+                if (val instanceof Double) {
+                    Double dval = (Double)val;
+                    if (obj.operator.type == TokenType.PLUS_PLUS) {
+                        dval = dval + 1;
+                    } else {
+                        dval = dval - 1;
+                    }
+                    map.put(idxExpr, dval);
+                    return dval;
+                }
+            }
+
+        } catch (IndexOutOfBoundsException e) {
+            throw new RuntimeError(obj.operator,
+                                    "Index out of bounds!");
+        } catch (RuntimeException e) {
+            throw new RuntimeError(obj.operator,
+                                    "Error occurred while performing index operation.");
+        }
+
+        throw new RuntimeError(obj.operator, "Can only index lists or strings.");
+    }
+
+    @Override
+    public Object visitIndexPostfixExpr(Expr.IndexPostfix obj) {
+        Object object = evaluate(obj.object);
+        Object idxExpr = evaluate(obj.idxExpr);
+
+        try {
+            if (object instanceof LoxList) {
+                LoxList list = (LoxList)object;
+                int idx = toIntIndex(idxExpr, obj.operator, list.size());
+                Object val = list.getAt(idx);
+                if (val instanceof Integer) {
+                    Integer ival = (Integer)val;
+                    Integer ivalOrig = ival;
+                    if (obj.operator.type == TokenType.PLUS_PLUS) {
+                        ival++;
+                    } else {
+                        ival--;
+                    }
+                    list.set(idx, ival);
+                    return ivalOrig;
+                }
+                if (val instanceof Double) {
+                    Double dval = (Double)val;
+                    Double dvalOrig = dval;
+                    if (obj.operator.type == TokenType.PLUS_PLUS) {
+                        dval = dval + 1;
+                    } else {
+                        dval = dval - 1;
+                    }
+                    list.set(idx, dval);
+                    return dvalOrig;
+                }
+            }
+
+            if (object instanceof LoxMap) {
+                LoxMap map = (LoxMap)object;
+                Object val = map.get(idxExpr);
+                if (val instanceof Integer) {
+                    Integer ival = (Integer)val;
+                    Integer ivalOrig = ival;
+                    if (obj.operator.type == TokenType.PLUS_PLUS) {
+                        ival++;
+                    } else {
+                        ival--;
+                    }
+                    map.put(idxExpr, ival);
+                    return ivalOrig;
+                }
+                if (val instanceof Double) {
+                    Double dval = (Double)val;
+                    Double dvalOrig = dval;
+                    if (obj.operator.type == TokenType.PLUS_PLUS) {
+                        dval = dval + 1;
+                    } else {
+                        dval = dval - 1;
+                    }
+                    map.put(idxExpr, dval);
+                    return dvalOrig;
+                }
+            }
+
+        } catch (IndexOutOfBoundsException e) {
+            throw new RuntimeError(obj.operator,
+                                    "Index out of bounds!");
+        } catch (RuntimeException e) {
+            throw new RuntimeError(obj.operator,
+                                    "Error occurred while performing index operation.");
+        }
+
+        throw new RuntimeError(obj.operator, "Can only index lists or strings.");
+    }
+
+    @Override
     public Object visitCallExpr(Expr.Call call) {
         Object callee = evaluate(call.callee);
         List<Object> args = new ArrayList<>();
@@ -778,11 +938,15 @@ public class Interpreter implements Expr.ExprVisitor<Object>, Stmt.StmtVisitor<V
                     case "popBack":
                     case "clear":
                     case "isEmpty":
+                    case "size":
                     // case "toString":
                         tmp = listClass.getMethod(methodName);
                         break;
                     case "add":
                         tmp = listClass.getMethod(methodName, LoxList.class);
+                        break;
+                    case "set":
+                        tmp = listClass.getMethod(methodName, Object.class, Object.class);
                         break;
                     default:
                         throw new RuntimeError(getExpr.name, 
@@ -885,6 +1049,36 @@ public class Interpreter implements Expr.ExprVisitor<Object>, Stmt.StmtVisitor<V
         
         throw new RuntimeError(getExpr.name,
             "Only instances have properties.");
+    }
+
+@Override
+    public Object visitIndexAssignExpr(Expr.IndexAssign obj) {
+        Object object = evaluate(obj.object);
+        Object idxExpr = evaluate(obj.idxExpr);
+        Object rhsVal = evaluate(obj.rhs);
+
+        try {
+            if (object instanceof LoxList) {
+                LoxList list = (LoxList)object;
+                int idx = toIntIndex(idxExpr, obj.lbrack, list.size());
+
+                return list.set(idx, rhsVal);
+            }
+
+            if (object instanceof LoxMap) {
+                LoxMap map = (LoxMap)object;
+                return map.put(idxExpr, rhsVal);
+            }
+
+        } catch (IndexOutOfBoundsException e) {
+            throw new RuntimeError(obj.lbrack,
+                                    "Index out of bounds!");
+        } catch (RuntimeException e) {
+            throw new RuntimeError(obj.lbrack,
+                                    "Error occurred while performing index operation.");
+        }
+
+        throw new RuntimeError(obj.lbrack, "Can only index lists or strings.");
     }
 
     @Override
@@ -1058,9 +1252,18 @@ public class Interpreter implements Expr.ExprVisitor<Object>, Stmt.StmtVisitor<V
     }
 
     private void checkNumberOperands(Token operator, Object left, Object right) {
-        if (left instanceof Double && right instanceof Double) return;
+        if ((left instanceof Double && right instanceof Double) ||
+            (left instanceof Integer && right instanceof Integer) ||
+            (left instanceof Integer && right instanceof Double) ||
+            (left instanceof Double && right instanceof Integer)) return;
 
         throw new RuntimeError(operator, "Operands must be numbers.");
+    }
+    private double convertToLoxNum(Object num) {
+        if (num instanceof Integer) return ((Integer)num).doubleValue();
+        if (num instanceof Double) return ((double)num);
+        throw new RuntimeError(new Token(TokenType.IDENTIFIER, "convertToLoxNum", null, 0), 
+                              "Cannot convert object to number.");
     }
 
     private void checkBitwiseOperands(Token operator, Object left, Object right) {
@@ -1097,7 +1300,7 @@ public class Interpreter implements Expr.ExprVisitor<Object>, Stmt.StmtVisitor<V
         return object.toString();
     }
 
-    private String canonicalizeNum(String text) {
+    public static String canonicalizeNum(String text) {
         if (text.endsWith(".0")) {
             text = text.substring(0, text.length() - 2);    // chop off ".0"
         }

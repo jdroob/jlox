@@ -35,7 +35,7 @@ import static com.craftinginterpreters.lox.TokenType.*;
  *
  * expression   -> comma ;
  * comma        -> assign ("," assign)* ;
- * assign       -> (call ".")? IDENTIFIER "=" assign | ternary ;
+ * assign       -> (index | (call ".")? IDENTIFIER) "=" assign | ternary ;
  * ternary      -> logical_or ("?" ternary ":" ternary)? ;
  * logical_or   -> equality ("or" equality)* ;
  * logical_and  -> equality ("and" equality)* ;
@@ -47,9 +47,9 @@ import static com.craftinginterpreters.lox.TokenType.*;
  * factor       -> unary ( ("*" | "/" | "%") unary)* ;
  * unary        -> ("!" | "-" | "~") unary | exp ;
  * exp          -> prefix ( "**" prefix )* ;
- * prefix       -> ("++" | "--") IDENTIFIER | index ;
+ * prefix       -> ("++" | "--") (IDENTIFIER | index) | index ;
  * index        -> postfix ("[" expression (":" expression)? "]")* ;
- * postfix      -> IDENTIFIER ("++" | "--") | call ;
+ * postfix      -> (IDENTIFIER | index) ("++" | "--") | call ;
  * call         -> primary ( "(" arguments? ")" | IDENTIFIER "." )* ;
  * arguments    -> expression ( "," expression )* ;
  * primary      -> NUMBER | STRING | "true" | "false" | "nil" | "this" | "(" expression ")" | IDENTIFIER | 
@@ -412,6 +412,9 @@ public class Parser {
             } else if (expr instanceof Expr.Get) {
                 Expr.Get get = (Expr.Get)expr;
                 return new Expr.Set(get.object, get.name, rhs);
+            } else if (expr instanceof Expr.Index) {
+                Expr.Index object = (Expr.Index)expr;
+                return new Expr.IndexAssign(object.lbrack, object.object, object.idxExpr, rhs);
             }
 
             error(equals, "Invalid assignment target.");
@@ -554,13 +557,18 @@ public class Parser {
     }
 
     private Expr prefix() {
-        // prefix -> ("++" | "--") IDENTIFIER | index ;
+        // prefix -> ("++" | "--") (IDENTIFIER | index) | index ;
         if (match(MINUS_MINUS, PLUS_PLUS)) {
             Token operator = previous();
             Expr expr = index();
 
-            if (!(expr instanceof Expr.Variable)) {
+            if (!(expr instanceof Expr.Variable) && !(expr instanceof Expr.Index)) {
                 error(operator, "Invalid prefix expression.");
+            }
+
+            if (expr instanceof Expr.Index) {
+                Expr.Index obj = (Expr.Index)expr;
+                return new Expr.IndexPrefix(operator, obj.object, obj.idxExpr);
             }
             
             Token name = ((Expr.Variable)expr).name;
@@ -580,6 +588,10 @@ public class Parser {
             Expr idxExpr2 = null;
             if (match(COLON)) idxExpr2 = expression();
             consume(RIGHT_BRACK, "Expected a ']'.");
+            if (match(PLUS_PLUS, MINUS_MINUS)) {
+                Token operator = previous();
+                return new Expr.IndexPostfix(operator, object, idxExpr);
+            }
             return new Expr.Index(lbrack, object, idxExpr, idxExpr2);
         }
 
@@ -587,7 +599,7 @@ public class Parser {
     }
 
     private Expr postfix() {
-        // postfix -> IDENTIFIER ("++" | "--") | call ;
+        // postfix -> (IDENTIFIER | index) ("++" | "--") | call ;
         Expr expr = call();
 
         if (match(MINUS_MINUS, PLUS_PLUS)) {

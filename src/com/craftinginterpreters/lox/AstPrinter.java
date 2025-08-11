@@ -42,6 +42,22 @@ public class AstPrinter implements Expr.ExprVisitor<String> {
     }
 
     @Override
+    public String visitIndexAssignExpr(Expr.IndexAssign obj) {
+        return parenthesize(obj.object.toString(), obj.idxExpr);
+    }
+
+    
+    @Override
+    public String visitIndexPostfixExpr(Expr.IndexPostfix idx) {
+        return parenthesize(idx.object.toString(), idx.idxExpr);
+    }
+
+    @Override
+    public String visitIndexPrefixExpr(Expr.IndexPrefix idx) {
+        return parenthesize(idx.object.toString(), idx.idxExpr);
+    }
+
+    @Override
     public String visitIndexExpr(Expr.Index idx) {
         return parenthesize(idx.object.toString(), idx.idxExpr);
     }
