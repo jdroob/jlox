@@ -11,6 +11,7 @@ public class Interpreter implements Expr.ExprVisitor<Object>, Stmt.StmtVisitor<V
     final Environment globals = new Environment();  // always refers to inner-most scope
     private Environment env = globals;      // env can change
     private HashMap<Expr, Integer> locals = new HashMap<>();
+    private int tupSize = 0;
 
     public Interpreter() {
         /**\
@@ -122,6 +123,22 @@ public class Interpreter implements Expr.ExprVisitor<Object>, Stmt.StmtVisitor<V
             @Override
             public String toString() {
                 return "<native fn: num>";
+            }
+        });
+
+        globals.define("tuple", new LoxCallable() {
+
+            @Override
+            public int arity() { return tupSize; }
+
+            @Override
+            public Object call(Interpreter interpreter, List<Object> args) {
+                return new LoxTuple(args);
+            }
+
+           @Override
+           public String toString() {
+                return "class: tupleFactory";
             }
         });
 
@@ -424,6 +441,9 @@ public class Interpreter implements Expr.ExprVisitor<Object>, Stmt.StmtVisitor<V
                 if (left instanceof LoxList && right instanceof LoxList) {
                     return ((LoxList)left).add((LoxList)right);
                 }
+                if (left instanceof LoxTuple && right instanceof LoxTuple) {
+                    return ((LoxTuple)left).add((LoxTuple)right);
+                }
                 if (left instanceof String && right instanceof Double) {
                     String sright = canonicalizeNum(right.toString());
                     return (String)left + sright;
@@ -717,6 +737,21 @@ public class Interpreter implements Expr.ExprVisitor<Object>, Stmt.StmtVisitor<V
                 }
             }
 
+            if (object instanceof LoxTuple) {
+                LoxTuple tup = (LoxTuple)object;
+                int start = toIntIndex(idxExpr, idx.lbrack, tup.size());
+                int end = idxExpr2 != null ? toIntIndex(idxExpr2, idx.lbrack, tup.size()) : -1;
+
+                if (end != -1) {
+                    if (start > end) {
+                        throw new RuntimeError(idx.lbrack, "Start index cannot be greater than end index.");
+                    }
+                    return tup.subList(start, end);
+                } else {
+                    return tup.getAt(start);
+                }
+            }
+
             if (object instanceof LoxMap) {
                 LoxMap map = (LoxMap)object;
                 return map.get(idxExpr);
@@ -888,6 +923,8 @@ public class Interpreter implements Expr.ExprVisitor<Object>, Stmt.StmtVisitor<V
             );
         }
 
+        tupSize = args.size();
+
         LoxCallable callable = (LoxCallable)callee;
         if (args.size() != callable.arity()) {
             throw new RuntimeError(call.paren, "Expected " +
@@ -986,6 +1023,58 @@ public class Interpreter implements Expr.ExprVisitor<Object>, Stmt.StmtVisitor<V
             }
         }
 
+        if (object instanceof LoxTuple) {
+            try {
+                final LoxTuple tup = (LoxTuple)object;
+                final String methodName = getExpr.name.lexeme;
+                Class<?> tupClass = tup.getClass();
+                
+                // Find the method but don't invoke it yet
+                Method tmp = null;
+                switch (methodName) {
+                    case "clear":
+                    case "isEmpty":
+                    case "size":
+                        tmp = tupClass.getMethod(methodName);
+                        break;
+                    default:
+                        throw new RuntimeError(getExpr.name, 
+                            "No such method '" + getExpr.name.lexeme + "' on list.");
+                }
+                final Method method = tmp;
+
+                // Return a LoxCallable that will invoke the method when called
+                return new LoxCallable() {
+                    @Override
+                    public int arity() {
+                        return method.getParameterCount();
+                    }
+
+                    @Override
+                    public Object call(Interpreter interpreter, List<Object> arguments) {
+                        try {
+                            if (arguments.isEmpty()) {
+                                return method.invoke(tup);
+                            } else {
+                                return method.invoke(tup, arguments.toArray());
+                            }
+                        } catch (IllegalAccessException | InvocationTargetException e) {
+                            throw new RuntimeError(getExpr.name,
+                                "Error invoking method '" + methodName + "': " + e.getMessage());
+                        }
+                    }
+
+                    @Override
+                    public String toString() {
+                        return "<tup method: " + methodName + ">";
+                    }
+                };
+            } catch (NoSuchMethodException e) {
+                throw new RuntimeError(getExpr.name, 
+                    "No such method '" + getExpr.name.lexeme + "' on list.");
+            }
+        }
+
         if (object instanceof LoxMap) {
             try {
                 final LoxMap map = (LoxMap)object;
@@ -1070,6 +1159,12 @@ public class Interpreter implements Expr.ExprVisitor<Object>, Stmt.StmtVisitor<V
                 return map.put(idxExpr, rhsVal);
             }
 
+            if (object instanceof LoxTuple) {
+                Lox.error(obj.lbrack,
+                    "Tuples are immutable and cannot be modified.");
+                return null;
+            }
+
         } catch (IndexOutOfBoundsException e) {
             throw new RuntimeError(obj.lbrack,
                                     "Index out of bounds!");
@@ -1078,7 +1173,7 @@ public class Interpreter implements Expr.ExprVisitor<Object>, Stmt.StmtVisitor<V
                                     "Error occurred while performing index operation.");
         }
 
-        throw new RuntimeError(obj.lbrack, "Can only index lists or strings.");
+        throw new RuntimeError(obj.lbrack, "Can only index assign lists or maps.");
     }
 
     @Override
@@ -1194,6 +1289,8 @@ public class Interpreter implements Expr.ExprVisitor<Object>, Stmt.StmtVisitor<V
         if (object instanceof Double) return (double)object != 0;
         if (object instanceof String) return !((String)object).isEmpty();
         if (object instanceof LoxList) return !((LoxList)object).isEmpty();
+        if (object instanceof LoxMap) return !((LoxMap)object).isEmpty();
+        if (object instanceof LoxTuple) return !((LoxTuple)object).isEmpty();
 
         return true;
     }
@@ -1205,14 +1302,18 @@ public class Interpreter implements Expr.ExprVisitor<Object>, Stmt.StmtVisitor<V
                object instanceof LoxFunction  ||
                object instanceof LoxClass     ||
                object instanceof LoxInstance  ||
-               object instanceof LoxList ||
+               object instanceof LoxList      ||
+               object instanceof LoxMap       ||
+               object instanceof LoxTuple     ||
                object == null;
     }
     
     private boolean isEqual(Object left, Object right) {
-        if (left instanceof LoxFunction ||
-            left instanceof LoxInstance ||
-            left instanceof LoxList     ||
+        if (left instanceof LoxFunction  ||
+            left instanceof LoxInstance  ||
+            left instanceof LoxList      ||
+            left instanceof LoxMap       ||
+            left instanceof LoxTuple     ||
             left instanceof LoxClass) {
                 left = System.identityHashCode(left);
                 right = System.identityHashCode(right);
@@ -1238,7 +1339,9 @@ public class Interpreter implements Expr.ExprVisitor<Object>, Stmt.StmtVisitor<V
             (left == null && isTruthy(right))                             ||
             (left instanceof LoxInstance && right instanceof LoxInstance) ||
             (left instanceof LoxFunction && right instanceof LoxFunction) ||
-            (left instanceof LoxList && right instanceof LoxList) ||
+            (left instanceof LoxList && right instanceof LoxList)         ||
+            (left instanceof LoxMap && right instanceof LoxMap)           ||
+            (left instanceof LoxTuple && right instanceof LoxTuple)       ||
             (left instanceof LoxClass && right instanceof LoxClass))
             return;
 
