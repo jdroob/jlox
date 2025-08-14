@@ -1,0 +1,21 @@
+/* testing an inner function */
+
+fun outer(x) {
+    print "outer " + x;
+    var inner_input = x;
+    fun inner() {
+        print "inner_input " + inner_input;
+        var x_squared = inner_input**2;
+        return x_squared;
+    }
+    var from_inner = inner();
+    print "inner returned " + from_inner + " to outer";
+    return from_inner;
+}
+
+fun main() {
+    print "in main...";
+    print "Value returned from outer(4): " + outer(4);
+    print "exiting...";
+}
+main();

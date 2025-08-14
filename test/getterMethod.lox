@@ -1,0 +1,14 @@
+/* test getter functionality */
+
+class Circle {
+    init(radius) {
+        this.radius = radius;
+    }
+
+    area {
+        return 3.141592653 * this.radius**2;
+    }
+}
+
+var circle = Circle(4);
+print circle.area;  // ~50.26555

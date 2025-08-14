@@ -1,0 +1,62 @@
+// Test for break and continue statements in loops
+// Test break in while loop
+print "Testing break in while loop:";
+var i = 0;
+while (i < 10) {
+  i = i + 1;
+  print i;
+  if (i == 5) {
+    print "Breaking at i=5";
+    break;
+  }
+}
+print "After while loop";
+
+// Test continue in while loop
+print "\nTesting continue in while loop:";
+i = 0;
+while (i < 10) {
+  i = i + 1;
+  if (i % 3 == 0) {
+    print "Skipping " + i;
+    continue;
+  }
+  print i;
+}
+print "After while loop";
+
+// Test break in for loop
+print "\nTesting break in for loop:";
+for (var j = 1; j <= 10; j++) {
+  print j;
+  if (j == 5) {
+    print "Breaking at j=5";
+    break;
+  }
+}
+print "After for loop";
+
+// Test continue in for loop
+print "\nTesting continue in for loop:";
+for (var j = 1; j <= 10; ++j) {
+  if (j % 3 == 0) {
+    print "Skipping " + j;
+    continue;
+  }
+  print j;
+}
+print "After for loop";
+
+// Test nested loops with break and continue
+print "\nTesting nested loops:";
+for (var outer = 1; outer <= 3; outer++) {
+  print "Outer loop: " + outer;
+  for (var inner = 1; inner <= 3; ++inner) {
+    if (outer == 2 and inner == 2) {
+      print "Breaking inner loop at outer=2, inner=2";
+      break;
+    }
+    print "  Inner loop: " + inner;
+  }
+}
+//print "After nested loops";

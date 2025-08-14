@@ -1,0 +1,16 @@
+var testInput = [1, 1, 1, 2, 2, 3, 3, 3];
+
+fun countInput(arr) {
+    var size = arr.size();
+    var map = {};
+    for (var i = 0; i < size; ++i) {
+        if (!map.containsKey(arr[i])) {
+            map[arr[i]] = 1;
+        } else {
+            map[arr[i]]++;
+        }
+    }
+    print map;
+}
+
+countInput(testInput);

@@ -1,0 +1,15 @@
+
+fun breakFunc() {
+    // Test break in for loop
+    print "\nTesting break in for loop:";
+    for (var j = 1; j <= 10; j = j + 1) {
+        print j;
+        if (j == 5) {
+            print "Breaking at j=5";
+            break;
+        }
+    }
+    print "After for loop";
+}
+
+breakFunc();

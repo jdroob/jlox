@@ -1,0 +1,18 @@
+// Test for variable initialization in different scopes
+print "Testing variable scope initialization...";
+
+var global = "global";
+print global;  // Should work fine
+
+{
+ // var a; // ERROR - Declared but uninitialized
+  var b = "initialized";
+  print b;  // Should work fine
+  
+  // This should throw an error
+  // print a; // ERROR
+  
+  var a = "now initialized";  
+  // Code below shouldn't execute
+  print a;  // Would work if we reached here
+}

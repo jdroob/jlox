@@ -1,0 +1,18 @@
+// Inputs
+var a = "john" ;
+var ra = "" ;
+
+// Preamble message
+print "before reversing...";
+print a;
+var i = 3;
+
+// Do the damn thing
+while (i >= 0) {
+    ra = ra + a[i];
+    i = i - 1;
+}
+
+// Brag
+print "done reversing...";
+print ra;
