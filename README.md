@@ -1,4 +1,10 @@
-### To Run
+# How to build and run
+```
+# I know using `make` in a Java project is ugly... 
+# I will fix at some point...
+make
+```
+
 ```
 # Because I'm lazy... just make jlox simple to run
 alias jlox='java -cp bin com.craftinginterpreters.lox.Lox'
