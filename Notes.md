@@ -29,7 +29,7 @@
 
 **2. JITs are the fastest way to implement dynamically typed languages. Why don't all dynamically typed languages do this?**  
 - It's harder to implement.  
-- It ties the implementation to a specific architecture (though interpreters do as well).  
+- It ties the implementation to a specific architecture (though interpreters do as well... [UPDATE] - What I meant here is that the compiled executable produced from the interpreter's source code is machine-specific. The actual interpreter source code is almost always machine-agnostic).  
 - JITs have a _startup cost_ (e.g., identifying hot spots). For languages often used for short programs, the startup cost outweighs the benefits.
 
 **3. Most LISP implementations that compile to C often include an interpreter to execute LISP code on the fly. Why?**  
