@@ -24,9 +24,10 @@ import static com.craftinginterpreters.lox.TokenType.*;
  * printStmt    -> "print" expression ";" ;
  * branchStmt   -> ifStmt | ifElseStmt ;
  * blockStmt    -> "{" declaration* "}" ;  // In statement context, '{' starts a block
- * iterStmt     -> whileStmt | forStmt ;
+ * iterStmt     -> whileStmt | forStmt | foreachStmt ;
  * whileStmt    -> "while" "(" expression ")" statement ;
  * forStmt      -> "for" "(" (varStmt | exprStmt)? ";" expression? ";" expression? ")" statement ;
+ * foreachStmt  -> "foreach" "(" IDENTIFIER ":" ( IDENTIFIER | list | map | call ) ")" statement;
  * ifStmt       -> "if" "(" expression ")" statement ("else" statement)? ;
  * exprStmt     -> expression ";" ;
  * breakStmt    -> "break" ";" ;
@@ -197,6 +198,7 @@ public class Parser {
         if (match(IF)) return branchStmt();
         if (match(WHILE)) return whileStmt();
         if (match(FOR)) return forStmt();
+        if (match(FOREACH)) return foreachStmt();
         if (match(BREAK)) return breakStmt();
         if (match(CONTINUE)) return continueStmt();
         if (match(RETURN)) return returnStmt();
@@ -247,6 +249,24 @@ public class Parser {
         Stmt body = statement();
 
         return new Stmt.While(expression, body);
+    }
+
+    private Stmt foreachStmt() {
+        // foreachStmt -> "foreach" "(" IDENTIFIER ":" ( IDENTIFIER | list | map | call ) ")" statement;
+        consume(LEFT_PAREN, "expected a '(' after 'foreach'.");
+        Token iterator = consume(IDENTIFIER, "expected an identifier.");
+        consume(COLON, "expected a ':'.");
+        Expr iterable = call();
+        if (!(iterable instanceof Expr.Variable) &&
+            !(iterable instanceof Expr.ListExpr)     &&
+            !(iterable instanceof Expr.MapExpr)      &&
+            !(iterable instanceof Expr.Call)) {
+               error(iterator, "Invalid iterable expression."); 
+            }
+        consume(RIGHT_PAREN, "expected a ')'.");
+        Stmt body = statement();
+
+        return new Stmt.Foreach(new Expr.Variable(iterator), iterable, body);
     }
 
     private Stmt forStmt() {
@@ -678,6 +698,8 @@ public class Parser {
         //            "super" "." IDENTIFIER | 
         //            "(" expression ")"     | 
         //            IDENTIFIER             | 
+        //            list                   | 
+        //            map                    | 
         //            error ;
         if (match(FALSE)) return new Expr.Literal(false);
         if (match(TRUE)) return new Expr.Literal(true);

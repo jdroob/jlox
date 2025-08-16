@@ -246,6 +246,43 @@ public class Interpreter implements Expr.ExprVisitor<Object>, Stmt.StmtVisitor<V
     }
 
     @Override
+    public Void visitForeachStmt(Stmt.Foreach stmt) {
+        Object iterable = evaluate(stmt.iterable);
+        if (!(iterable instanceof LoxList) &&
+            !(iterable instanceof LoxMap)  &&
+            !(iterable instanceof LoxTuple)) {
+                Lox.error(stmt.iterator.name, "Can only iterate over iterables.");
+        }
+
+        env.define(stmt.iterator.name.lexeme, null);
+
+        if (iterable instanceof LoxList) {
+            LoxList list = (LoxList)iterable;
+            for (int i=0; i<list.size(); ++i) {
+                Object val = list.getAt(i);
+                env.update(stmt.iterator.name, val);
+                execute(stmt.body);
+            }
+        } else if (iterable instanceof LoxTuple) {
+            LoxTuple tup = (LoxTuple)iterable;
+            for (int i=0; i<tup.size(); ++i) {
+                Object val = tup.getAt(i);
+                env.update(stmt.iterator.name, val);
+                execute(stmt.body);
+            }
+        } else if (iterable instanceof LoxMap) {
+            LoxMap map = (LoxMap)iterable;
+            for (int i=0; i<map.size(); ++i) {
+                Map.Entry<Object, Object> entry = map.getAt(i);
+                env.update(stmt.iterator.name, entry);
+                execute(stmt.body);
+            }
+        }
+
+        return null;
+    }
+
+    @Override
     public Void visitForStmt(Stmt.For forStmt) {
         if (forStmt.initialization != null) {
             execute(forStmt.initialization);

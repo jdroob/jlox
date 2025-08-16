@@ -24,6 +24,7 @@ static {
     keywords.put("extends", EXTENDS);
     keywords.put("false", FALSE);
     keywords.put("for", FOR);
+    keywords.put("foreach", FOREACH);
     keywords.put("fun", FUN);
     keywords.put("if", IF);
     keywords.put("nil", NIL);

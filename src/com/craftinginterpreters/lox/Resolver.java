@@ -195,6 +195,19 @@ public class Resolver implements Expr.ExprVisitor<Void>, Stmt.StmtVisitor<Void> 
     }
 
     @Override
+    public Void visitForeachStmt(Stmt.Foreach stmt) {
+        LoopStatus enclosing = loopStatus;
+        loopStatus = LoopStatus.LOOP;
+        declare(stmt.iterator.name, ObjectType.VARIABLE);
+        define(stmt.iterator.name);
+        resolve(stmt.iterable);
+        resolve(stmt.body);
+        loopStatus = enclosing;
+
+        return null;
+    }
+
+    @Override
     public Void visitBreakStmt(Stmt.Break stmt) {
         if (loopStatus == LoopStatus.NONE) {
             Lox.error(stmt.keyword,

@@ -43,6 +43,7 @@ public class GenerateAst {
             "If : Expr condition, Stmt thenStmt, Stmt elseStmt",
             "While : Expr condition, Stmt body",
             "For : Stmt initialization, Expr condition, Stmt update, Stmt body",
+            "Foreach : Expr.Variable iterator, Expr iterable, Stmt body",
             "Block : List<Stmt> statements",
             "Break : Token keyword",
             "Continue : Token keyword",

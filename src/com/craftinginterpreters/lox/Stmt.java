@@ -10,6 +10,7 @@ abstract class Stmt {
 		R visitIfStmt(Stmt.If ifStmt);
 		R visitWhileStmt(Stmt.While whileStmt);
 		R visitForStmt(Stmt.For forStmt);
+		R visitForeachStmt(Stmt.Foreach foreach);
 		R visitBlockStmt(Stmt.Block block);
 		R visitBreakStmt(Stmt.Break breakStmt);
 		R visitContinueStmt(Stmt.Continue continueStmt);
@@ -102,6 +103,22 @@ abstract class Stmt {
 		final Stmt initialization;
 		final Expr condition;
 		final Stmt update;
+		final Stmt body;
+	}
+	static class Foreach extends Stmt {
+		Foreach(Expr.Variable iterator, Expr iterable, Stmt body) {
+			this.iterator = iterator;
+			this.iterable = iterable;
+			this.body = body;
+		}
+
+		@Override
+		public <R> R accept(StmtVisitor<R> visitor) {
+			return visitor.visitForeachStmt(this);
+		}
+
+		final Expr.Variable iterator;
+		final Expr iterable;
 		final Stmt body;
 	}
 	static class Block extends Stmt {

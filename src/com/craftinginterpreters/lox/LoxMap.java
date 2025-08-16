@@ -47,6 +47,23 @@ public class LoxMap {
         return map.size();
     }
 
+    public Map.Entry<Object, Object> getAt(Integer idx) {
+        if (idx < 0 || idx >= map.size()) {
+            throw new RuntimeException("Map index " + idx + " out of bounds for map of size " + map.size());
+        }
+        
+        int currentIndex = 0;
+        for (Map.Entry<Object, Object> entry : map.entrySet()) {
+            if (currentIndex == idx) {
+                return entry;
+            }
+            currentIndex++;
+        }
+        
+        // This should never be reached due to bounds check above
+        throw new RuntimeException("Unexpected error in getAt method");
+    }
+
     public String toString() {
         if (map.isEmpty()) return "{}";
         StringBuilder repr = new StringBuilder("{ ");
