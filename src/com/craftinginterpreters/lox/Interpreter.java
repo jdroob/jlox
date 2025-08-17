@@ -256,27 +256,43 @@ public class Interpreter implements Expr.ExprVisitor<Object>, Stmt.StmtVisitor<V
 
         env.define(stmt.iterator.name.lexeme, null);
 
-        if (iterable instanceof LoxList) {
-            LoxList list = (LoxList)iterable;
-            for (int i=0; i<list.size(); ++i) {
-                Object val = list.getAt(i);
-                env.update(stmt.iterator.name, val);
-                execute(stmt.body);
+        try {
+            if (iterable instanceof LoxList) {
+                LoxList list = (LoxList)iterable;
+                for (int i=0; i<list.size(); ++i) {
+                    Object val = list.getAt(i);
+                    env.update(stmt.iterator.name, val);
+                    try {
+                        execute(stmt.body);
+                    } catch (Continue ignored) {
+                        // When continue is encountered, jump to next iteration
+                    }
+                }
+            } else if (iterable instanceof LoxTuple) {
+                LoxTuple tup = (LoxTuple)iterable;
+                for (int i=0; i<tup.size(); ++i) {
+                    Object val = tup.getAt(i);
+                    env.update(stmt.iterator.name, val);
+                    try {
+                        execute(stmt.body);
+                    } catch (Continue ignored) {
+                        // When continue is encountered, jump to next iteration
+                    }
+                }
+            } else if (iterable instanceof LoxMap) {
+                LoxMap map = (LoxMap)iterable;
+                for (int i=0; i<map.size(); ++i) {
+                    Map.Entry<Object, Object> entry = map.getAt(i);
+                    env.update(stmt.iterator.name, entry);
+                    try {
+                        execute(stmt.body);
+                    } catch (Continue ignored) {
+                        // When continue is encountered, jump to next iteration
+                    }
+                }
             }
-        } else if (iterable instanceof LoxTuple) {
-            LoxTuple tup = (LoxTuple)iterable;
-            for (int i=0; i<tup.size(); ++i) {
-                Object val = tup.getAt(i);
-                env.update(stmt.iterator.name, val);
-                execute(stmt.body);
-            }
-        } else if (iterable instanceof LoxMap) {
-            LoxMap map = (LoxMap)iterable;
-            for (int i=0; i<map.size(); ++i) {
-                Map.Entry<Object, Object> entry = map.getAt(i);
-                env.update(stmt.iterator.name, entry);
-                execute(stmt.body);
-            }
+        } catch (Break ignored) {
+            // When break is encountered, we just exit the loop completely
         }
 
         return null;
@@ -474,6 +490,24 @@ public class Interpreter implements Expr.ExprVisitor<Object>, Stmt.StmtVisitor<V
                 }
                 if (left instanceof String && right instanceof String) {
                     return (String)left + (String)right;
+                }
+                if (left instanceof String && right instanceof LoxList) {
+                    return (String)left + ((LoxList)right).toString();
+                }
+                if (left instanceof LoxList && right instanceof String) {
+                    return ((LoxList)left).toString() + (String)right;
+                }
+                if (left instanceof String && right instanceof LoxTuple) {
+                    return (String)left + ((LoxTuple)right).toString();
+                }
+                if (left instanceof LoxTuple && right instanceof String) {
+                    return ((LoxTuple)left).toString() + (String)right;
+                }
+                if (left instanceof String && right instanceof LoxMap) {
+                    return (String)left + ((LoxMap)right).toString();
+                }
+                if (left instanceof LoxMap && right instanceof String) {
+                    return ((LoxMap)left).toString() + (String)right;
                 }
                 if (left instanceof LoxList && right instanceof LoxList) {
                     return ((LoxList)left).add((LoxList)right);
@@ -1076,7 +1110,7 @@ public class Interpreter implements Expr.ExprVisitor<Object>, Stmt.StmtVisitor<V
                         break;
                     default:
                         throw new RuntimeError(getExpr.name, 
-                            "No such method '" + getExpr.name.lexeme + "' on list.");
+                            "No such method '" + getExpr.name.lexeme + "' on tuple.");
                 }
                 final Method method = tmp;
 
@@ -1108,7 +1142,7 @@ public class Interpreter implements Expr.ExprVisitor<Object>, Stmt.StmtVisitor<V
                 };
             } catch (NoSuchMethodException e) {
                 throw new RuntimeError(getExpr.name, 
-                    "No such method '" + getExpr.name.lexeme + "' on list.");
+                    "No such method '" + getExpr.name.lexeme + "' on tuple.");
             }
         }
 
@@ -1137,7 +1171,7 @@ public class Interpreter implements Expr.ExprVisitor<Object>, Stmt.StmtVisitor<V
                         break;
                     default:
                         throw new RuntimeError(getExpr.name, 
-                            "No such method '" + getExpr.name.lexeme + "' on list.");
+                            "No such method '" + getExpr.name.lexeme + "' on map.");
                 }
                 final Method method = tmp;
 
@@ -1164,13 +1198,44 @@ public class Interpreter implements Expr.ExprVisitor<Object>, Stmt.StmtVisitor<V
 
                     @Override
                     public String toString() {
-                        return "<list method: " + methodName + ">";
+                        return "<map method: " + methodName + ">";
                     }
                 };
             } catch (NoSuchMethodException e) {
                 throw new RuntimeError(getExpr.name, 
-                    "No such method '" + getExpr.name.lexeme + "' on list.");
+                    "No such method '" + getExpr.name.lexeme + "' on map.");
             }
+        }
+        
+        if (object instanceof Map.Entry) {
+            @SuppressWarnings("unchecked")
+            final Map.Entry<Object, Object> entry = (Map.Entry<Object, Object>)object;
+            final String methodName = getExpr.name.lexeme;
+            
+            // Return a LoxCallable that calls the appropriate method directly
+            return new LoxCallable() {
+                @Override
+                public int arity() {
+                    return 0;                 
+                }
+
+                @Override
+                public Object call(Interpreter interpreter, List<Object> arguments) {
+                    if (methodName.equals("getKey")) {
+                        return entry.getKey();
+                    } else if (methodName.equals("getValue")) {
+                        return entry.getValue();
+                    } else {
+                        throw new RuntimeError(getExpr.name,
+                            "No such method '" + methodName + "' on key-value pair.");
+                    }
+                }
+
+                @Override
+                public String toString() {
+                    return "<pair method: " + methodName + ">";
+                }
+            };
         }
         
         throw new RuntimeError(getExpr.name,

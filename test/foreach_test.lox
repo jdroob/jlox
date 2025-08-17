@@ -1,0 +1,192 @@
+// Comprehensive test for foreach feature with different iterable types
+print "=== Testing foreach with different iterable types ===";
+
+// Test 1: Basic foreach with LoxList
+print "\n--- Test 1: Basic List Iteration ---";
+var numbers = [1, 2, 3, 4, 5];
+var sum = 0;
+print "Original list: " + numbers;
+
+foreach (num : numbers) {
+    sum = sum + num;
+    print "Processing: " + num + ", running sum: " + sum;
+}
+print "Final sum: " + sum;
+
+// Test 2: Foreach with string list
+print "\n--- Test 2: String List Iteration ---";
+var fruits = ["apple", "banana", "cherry", "date"];
+var fruitCount = 0;
+
+foreach (fruit : fruits) {
+    fruitCount = fruitCount + 1;
+    print fruitCount + ". " + fruit;
+}
+
+// Test 3: Foreach with LoxMap - iterating over key-value pairs
+print "\n--- Test 3: Map Iteration (Key-Value Pairs) ---";
+var inventory = {"apples": 10, "bananas": 5, "oranges": 8};
+var totalItems = 0;
+
+print "Inventory contents:";
+foreach (item : inventory) {
+    var key = item.getKey();    // First element is the key
+    var value = item.getValue();  // Second element is the value
+    totalItems = totalItems + value;
+    print "  " + key + ": " + value + " units";
+}
+print "Total items : inventory: " + totalItems;
+
+// Test 4: Nested foreach loops
+print "\n--- Test 4: Nested Foreach Loops ---";
+var matrix = [[1, 2, 3], [4, 5, 6], [7, 8, 9]];
+print "Matrix multiplication table:";
+
+foreach (row : matrix) {
+    var rowStr = "";
+    foreach (element : row) {
+        rowStr = rowStr + element + " ";
+    }
+    print rowStr;
+}
+
+// Test 5: Foreach with mixed data types
+//print "\n--- Test 5: Mixed Data Types ---";
+//var mixedList = [42, "hello", true, nil, 3.14];
+//print "Processing mixed data types:";
+//
+//foreach (item : mixedList) {
+//    if (item == nil) {
+//        print "  Found nil value";
+//    } else if (typeof(item) == "string") {
+//        print "  String: '" + item + "' (length: " + item.length() + ")";
+//    } else if (typeof(item) == "number") {
+//        print "  Number: " + item + " (doubled: " + (item * 2) + ")";
+//    } else if (typeof(item) == "boolean") {
+//        print "  Boolean: " + item + " (negated: " + (!item) + ")";
+//    }
+//}
+
+// Test 6: Building data with foreach
+print "\n--- Test 6: Building Data with Foreach ---";
+var sourceList = [1, 2, 3, 4, 5];
+var evenNumbers = [];
+var oddNumbers = [];
+
+foreach (num : sourceList) {
+    if (num % 2 == 0) {
+        evenNumbers.append(num);
+    } else {
+        oddNumbers.append(num);
+    }
+}
+
+print "Original: " + sourceList;
+print "Even numbers: " + evenNumbers;
+print "Odd numbers: " + oddNumbers;
+
+// Test 7: Foreach with complex map operations
+print "\n--- Test 7: Complex Map Operations ---";
+var studentGrades = {"Alice": 95, "Bob": 87, "Charlie": 92, "Diana": 78};
+var highPerformers = [];
+var totalGrade = 0;
+var studentCount = 0;
+
+foreach (student : studentGrades) {
+    var name = student.getKey();
+    var grade = student.getValue();
+    totalGrade = totalGrade + grade;
+    studentCount = studentCount + 1;
+    
+    if (grade >= 90) {
+        highPerformers.append(name);
+    }
+}
+
+var averageGrade = totalGrade / studentCount;
+print "Class average: " + averageGrade;
+print "High performers (90+): " + highPerformers;
+
+// Test 8: Foreach with function calls
+print "\n--- Test 8: Foreach with Function Calls ---";
+fun square(x) {
+    return x * x;
+}
+
+fun isEven(x) {
+    return x % 2 == 0;
+}
+
+var testNumbers = [1, 2, 3, 4, 5, 6];
+var squares = [];
+var evenSquares = [];
+
+foreach (num : testNumbers) {
+    var squared = square(num);
+    squares.append(squared);
+    
+    if (isEven(squared)) {
+        evenSquares.append(squared);
+    }
+}
+
+print "Numbers: " + testNumbers;
+print "Squares: " + squares;
+print "Even squares: " + evenSquares;
+
+// Test 9: Foreach with break and continue (if supported)
+print "\n--- Test 9: Early Termination Test ---";
+var countdown = [10, 9, 8, 7, 6, 5, 4, 3, 2, 1];
+var found = false;
+
+print "Looking for number 5 : countdown:";
+foreach (num : countdown) {
+    print "Checking: " + num;
+    if (num == 5) {
+        print "Found it! Number 5 discovered.";
+        found = true;
+        break;
+    } else {
+        continue;
+    }
+}
+
+if (!found) {
+    print "Number 5 not found : the list.";
+}
+
+// Test 10: Performance test with larger dataset
+print "\n--- Test 10: Performance Test ---";
+var largeList = [];
+for (var i = 1; i <= 100; i = i + 1) {
+    largeList.append(i);
+}
+
+var count = 0;
+foreach (item : largeList) {
+    count = count + 1;
+}
+
+print "Successfully iterated through " + count + " items";
+
+// Test 11: Empty collections
+print "\n--- Test 11: Empty Collections ---";
+var emptyList = [];
+var emptyMap = {};
+var emptyCount = 0;
+
+print "Testing empty list:";
+foreach (item : emptyList) {
+    emptyCount = emptyCount + 1;
+}
+print "Empty list iteration count: " + emptyCount;
+
+emptyCount = 0;
+print "Testing empty map:";
+foreach (item : emptyMap) {
+    emptyCount = emptyCount + 1;
+}
+print "Empty map iteration count: " + emptyCount;
+
+print "\n=== All foreach tests completed! ===";
+
